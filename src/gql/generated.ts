@@ -59,6 +59,13 @@ export type BandAlbum = {
   year?: Maybe<Scalars['Int']['output']>;
 };
 
+export type BandMatch = {
+  __typename?: 'BandMatch';
+  active_years: Array<Scalars['Int']['output']>;
+  id: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+};
+
 export type BandMember = {
   __typename?: 'BandMember';
   id: Scalars['String']['output'];
@@ -77,7 +84,7 @@ export type Query = {
   __typename?: 'Query';
   getAllAboutBand?: Maybe<AllAboutBandSummary>;
   getAllAboutBandDebug?: Maybe<AllAboutBand>;
-  getBand?: Maybe<Band>;
+  getBand: Array<BandMatch>;
   searchBands: Array<Band>;
 };
 
@@ -93,7 +100,7 @@ export type QueryGetAllAboutBandDebugArgs = {
 
 
 export type QueryGetBandArgs = {
-  id: Scalars['String']['input'];
+  name: Scalars['String']['input'];
 };
 
 
