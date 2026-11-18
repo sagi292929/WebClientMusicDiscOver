@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import MusicEntrance from './components/MusicEntrance/MusicEntrance'
-import SearchResults from './SearchResults'
+import SearchResults from './SearchResults/SearchResults'
 
 function App() {
   const [search, setSearch] = useState<{ query: string; category: string } | null>(null)
