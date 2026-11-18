@@ -1,5 +1,8 @@
 /** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
+/** Internal type. DO NOT USE DIRECTLY. */
 export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
+import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 /** All built-in and custom scalars, mapped to their actual values */
@@ -37,6 +40,22 @@ export type AllAboutBandSummary = {
   members: Array<BandMember>;
   name: Scalars['String']['output'];
   songs_hits: Array<BandSongHit>;
+};
+
+export type Artist = {
+  __typename?: 'Artist';
+  born_in?: Maybe<Scalars['String']['output']>;
+  es_id: Scalars['String']['output'];
+  former_bands: Array<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+};
+
+export type ArtistMatch = {
+  __typename?: 'ArtistMatch';
+  born_in?: Maybe<Scalars['String']['output']>;
+  es_id: Scalars['String']['output'];
+  former_bands: Array<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
 };
 
 export type Band = {
@@ -84,6 +103,7 @@ export type Query = {
   __typename?: 'Query';
   getAllAboutBand?: Maybe<AllAboutBandSummary>;
   getAllAboutBandDebug?: Maybe<AllAboutBand>;
+  getArtist: Array<ArtistMatch>;
   getBand: Array<BandMatch>;
   searchBands: Array<Band>;
 };
@@ -96,6 +116,12 @@ export type QueryGetAllAboutBandArgs = {
 
 export type QueryGetAllAboutBandDebugArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type QueryGetArtistArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  name: Scalars['String']['input'];
 };
 
 
@@ -155,6 +181,7 @@ export type SqlArtist = {
   Id: Scalars['Int']['output'];
   artistInstruments: Array<SqlArtistInstrument>;
   birthdate: Scalars['String']['output'];
+  es_id: Scalars['String']['output'];
   name: Scalars['String']['output'];
 };
 
@@ -174,6 +201,7 @@ export type SqlArtistSummary = {
   __typename?: 'SQLArtistSummary';
   artistInstruments: Array<SqlArtistInstrumentSummary>;
   birthdate: Scalars['String']['output'];
+  es_id: Scalars['String']['output'];
   name: Scalars['String']['output'];
 };
 
@@ -235,3 +263,13 @@ export type StudioAlbum = {
   name: Scalars['String']['output'];
   year?: Maybe<Scalars['Int']['output']>;
 };
+
+export type GetBandQueryVariables = Exact<{
+  name: string;
+}>;
+
+
+export type GetBandQuery = { getBand: Array<{ id: string, name: string, active_years: Array<number> }> };
+
+
+export const GetBandDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetBand"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getBand"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"active_years"}}]}}]}}]} as unknown as DocumentNode<GetBandQuery, GetBandQueryVariables>;
