@@ -1,75 +1,30 @@
-# React + TypeScript + Vite
+# Music DiskOver
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React, TypeScript, and Vite web client for discovering music. The UI uses [MUI](https://mui.com/) components and the app theme defined in `src/theme/index.ts`.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Install dependencies and start the development server:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```sh
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Other useful commands:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```sh
+npm run build
+npm run lint
 ```
+
+## UI implementation guidelines
+
+- **Prefer MUI over CSS files.** Build layouts and component styling with MUI components and the `sx` prop instead of adding or extending component-specific CSS files.
+- Use the closest MUI component for the job, such as `Box`, `Stack`, `Typography`, `Button`, `TextField`, `List`, `Alert`, and `Chip`. Use semantic elements through props like `component="main"` or `component="section"`.
+- Use `sx` for one-off or component-local styling. Use MUI `styled()` when a styled component needs to be reused in multiple places.
+- Put app-wide colors, typography, and reusable component defaults or overrides in `src/theme/index.ts`. Read colors from the theme palette (for example, `bgcolor: 'background.paper'` or `color: 'text.secondary'`) instead of hard-coding color values in components.
+- Keep CSS files for cases MUI does not cover well, such as global browser defaults, third-party library styling, or specialized effects. Avoid duplicating MUI styles in CSS.
+- Preserve accessible names, semantic HTML, keyboard interaction, and responsive behavior when replacing existing UI with MUI.
+
+The app applies `appTheme` and MUI `CssBaseline` at the root in `src/main.tsx`.

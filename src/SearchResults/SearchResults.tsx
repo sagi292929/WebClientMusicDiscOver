@@ -1,6 +1,17 @@
 import { useQuery } from '@apollo/client/react'
+import Alert from '@mui/material/Alert'
+import AlertTitle from '@mui/material/AlertTitle'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Chip from '@mui/material/Chip'
+import CircularProgress from '@mui/material/CircularProgress'
+import List from '@mui/material/List'
+import ListItem from '@mui/material/ListItem'
+import Link from '@mui/material/Link'
+import Paper from '@mui/material/Paper'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
 import { formatActiveYears } from '../components/MusicEntrance/utils'
-import './SearchResults.css'
 import {
   GetArtistAndAboutDocument,
   GetBandDocument,
@@ -136,100 +147,255 @@ function SearchResults({ query, category, results, onBack }: SearchResultsProps)
       : results
 
   const sortedResults = sortSearchResults(displayedResults, query)
+  const isLoading = (isBandSearch && bandLoading) || (isArtistSearch && artistLoading)
+  const showFatalError =
+    (isBandSearch && bandError) || (isArtistSearch && artistError && sortedResults.length === 0)
+  const errorMessage = isBandSearch ? bandError?.message : artistError?.message
 
   return (
-    <main className="search-results-page">
-      <header className="search-results-header">
-        <a className="music-brand" href="/" aria-label="Music DiskOver home">
-          <span className="music-brand-mark" aria-hidden="true">♫</span>
-          <span>Music DiskOver</span>
-        </a>
-        <button className="search-results-back" type="button" onClick={onBack}>
-          <i className="fa-solid fa-arrow-left" aria-hidden="true" />
-          <span>New search</span>
-        </button>
-      </header>
+    <Box
+      component="main"
+      sx={{
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+        backgroundImage:
+          'radial-gradient(ellipse at 50% -35%, rgb(198 255 0 / 8%), transparent 58%)',
+      }}
+    >
+      <Box
+        component="header"
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 2,
+          py: 2,
+          px: { xs: 2.5, sm: 5, md: 9 },
+          borderBottom: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Link
+          href="/"
+          underline="none"
+          color="text.primary"
+          aria-label="Music DiskOver home"
+          sx={{
+            display: 'inline-flex',
+            flex: '0 0 auto',
+            alignItems: 'center',
+            gap: 1,
+          }}
+        >
+          <Typography component="span" variant="h6" aria-hidden="true" color="primary">
+            ♫
+          </Typography>
+          <Typography component="span" variant="h6" sx={{ fontWeight: 700 }}>
+            Music DiskOver
+          </Typography>
+        </Link>
+        <Button
+          type="button"
+          variant="outlined"
+          onClick={onBack}
+          startIcon={<i className="fa-solid fa-arrow-left" aria-hidden="true" />}
+        >
+          New search
+        </Button>
+      </Box>
 
-      <section className="search-results-content" aria-labelledby="search-results-title">
-        <h1 id="search-results-title">Search results for: &quot;{query}&quot;</h1>
-        <p className="search-results-category">
-          <span>Category</span>
-          <strong>{category}</strong>
-        </p>
+      <Box
+        component="section"
+        aria-labelledby="search-results-title"
+        sx={{
+          width: 'calc(100% - 40px)',
+          maxWidth: 1080,
+          mx: 'auto',
+          py: { xs: 5, sm: 8 },
+        }}
+      >
+        <Typography
+          component="h1"
+          variant="h3"
+          id="search-results-title"
+          gutterBottom
+          sx={{
+            overflowWrap: 'anywhere',
+            fontWeight: 700,
+            letterSpacing: '-0.055em',
+            lineHeight: 1.08,
+          }}
+        >
+          Search results for: &ldquo;{query}&rdquo;
+        </Typography>
 
-        <div className="search-results-list-heading">
-          <h2>Results</h2>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 3 }}>
+          <Typography component="span" variant="body2" color="text.secondary">
+            Category
+          </Typography>
+          <Chip label={category} size="small" variant="outlined" />
+        </Stack>
+
+        <Stack
+          direction="row"
+          sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 1.5, mt: 7 }}
+        >
+          <Typography component="h2" variant="h6" sx={{ fontWeight: 600 }}>
+            Results
+          </Typography>
           {sortedResults.length > 0 && (
-            <span>
+            <Typography component="span" variant="body2" color="text.secondary">
               {sortedResults.length} {sortedResults.length === 1 ? 'result' : 'results'}
-            </span>
+            </Typography>
           )}
-        </div>
+        </Stack>
 
-        {(isBandSearch && bandLoading) || (isArtistSearch && artistLoading) ? (
-          <div className="search-results-empty" role="status">
-            <strong>{isBandSearch ? 'Searching bands…' : 'Searching artists…'}</strong>
-          </div>
-        ) : isBandSearch && bandError ? (
-          <div className="search-results-empty" role="alert">
-            <strong>Could not load band results</strong>
-            <span>{bandError.message}</span>
-          </div>
-        ) : isArtistSearch && artistError && sortedResults.length === 0 ? (
-          <div className="search-results-empty" role="alert">
-            <strong>Could not load artist results</strong>
-            <span>{artistError.message}</span>
-          </div>
+        {isLoading ? (
+          <Paper variant="outlined" sx={{ p: 4 }}>
+            <Stack
+              direction="row"
+              spacing={1.5}
+              role="status"
+              sx={{ alignItems: 'center', justifyContent: 'center' }}
+            >
+              <CircularProgress size={20} />
+              <Typography component="strong" variant="body1">
+                {isBandSearch ? 'Searching bands…' : 'Searching artists…'}
+              </Typography>
+            </Stack>
+          </Paper>
+        ) : showFatalError ? (
+          <Alert severity="error" role="alert">
+            <AlertTitle>
+              {isBandSearch ? 'Could not load band results' : 'Could not load artist results'}
+            </AlertTitle>
+            {errorMessage}
+          </Alert>
         ) : sortedResults.length > 0 ? (
-          <>
+          <Stack spacing={2}>
             {isArtistSearch && artistError && (
-              <div className="search-results-empty" role="alert">
-                <strong>Some artist details could not be loaded</strong>
-                <span>{artistError.message}</span>
-              </div>
+              <Alert severity="warning" role="alert">
+                <AlertTitle>Some artist details could not be loaded</AlertTitle>
+                {artistError.message}
+              </Alert>
             )}
-            <ul className="search-results-list">
+            <List
+              component="ul"
+              disablePadding
+              sx={{
+                overflow: 'hidden',
+                border: 1,
+                borderColor: 'divider',
+                borderRadius: 2,
+                bgcolor: 'background.paper',
+              }}
+            >
               {sortedResults.map((result, index) => (
-                <li className="search-result-row" key={result.id}>
-                  <span className="search-result-index">
+                <ListItem
+                  component="li"
+                  key={result.id}
+                  divider={index < sortedResults.length - 1}
+                  sx={{
+                    gap: { xs: 1.5, sm: 2 },
+                    minHeight: 82,
+                    py: 1.5,
+                    px: { xs: 1.5, sm: 2.5 },
+                    alignItems: 'center',
+                    transition: 'background-color 150ms ease',
+                    '&:hover': { bgcolor: 'action.hover' },
+                  }}
+                >
+                  <Typography
+                    component="span"
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontVariantNumeric: 'tabular-nums', minWidth: { xs: 'auto', sm: 3 } }}
+                  >
                     {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <span className="search-result-art" aria-hidden="true">
+                  </Typography>
+                  <Box
+                    aria-hidden="true"
+                    sx={{
+                      width: { xs: 40, sm: 48 },
+                      height: { xs: 40, sm: 48 },
+                      borderRadius: 1,
+                      bgcolor: 'action.selected',
+                      color: 'primary.main',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
                     <i className="fa-solid fa-music" />
-                  </span>
-                  <span className="search-result-copy">
-                    <strong>{result.title}</strong>
-                    {result.subtitle && <span>{result.subtitle}</span>}
+                  </Box>
+                  <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography component="strong" variant="subtitle1" noWrap>
+                      {result.title}
+                    </Typography>
+                    {result.subtitle && (
+                      <Typography component="span" variant="body2" color="text.secondary" noWrap>
+                        {result.subtitle}
+                      </Typography>
+                    )}
                     {result.fields?.map((field) => (
-                      <span className="search-result-field" key={field.label}>
-                        <strong>{field.label}:</strong> {field.value}
-                      </span>
+                      <Typography
+                        key={field.label}
+                        component="span"
+                        variant="caption"
+                        color="text.secondary"
+                      >
+                        <Box component="strong" sx={{ color: 'text.primary' }}>
+                          {field.label}:
+                        </Box>{' '}
+                        {field.value}
+                      </Typography>
                     ))}
-                  </span>
-                  {result.details && <span className="search-result-details">{result.details}</span>}
-                  <span className="search-result-type">{result.category ?? category}</span>
-                  <i className="fa-solid fa-chevron-right search-result-arrow" aria-hidden="true" />
-                </li>
+                  </Stack>
+                  {result.details && (
+                    <Typography
+                      component="span"
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ display: { xs: 'none', sm: 'block' } }}
+                    >
+                      {result.details}
+                    </Typography>
+                  )}
+                  <Chip
+                    label={result.category ?? category}
+                    size="small"
+                    sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+                  />
+                  <Box component="span" aria-hidden="true" sx={{ color: 'text.disabled' }}>
+                    <i className="fa-solid fa-chevron-right" />
+                  </Box>
+                </ListItem>
               ))}
-            </ul>
-          </>
+            </List>
+          </Stack>
         ) : (
-          <div className="search-results-empty">
-            <span className="search-results-empty-icon" aria-hidden="true">
-              <i className="fa-solid fa-music" />
-            </span>
-            <strong>Results will appear here</strong>
-            <span>
-              {isBandSearch
-                ? 'No bands matched this search.'
-                : isArtistSearch
-                  ? 'No artists matched this search.'
-                  : 'Search is ready to connect to the music catalog.'}
-            </span>
-          </div>
+          <Paper variant="outlined" sx={{ p: 4 }}>
+            <Stack spacing={1} sx={{ alignItems: 'center', textAlign: 'center' }}>
+              <Box aria-hidden="true" sx={{ color: 'text.secondary', fontSize: '1.25rem' }}>
+                <i className="fa-solid fa-music" />
+              </Box>
+              <Typography component="strong" variant="subtitle1">
+                Results will appear here
+              </Typography>
+              <Typography component="span" variant="body2" color="text.secondary">
+                {isBandSearch
+                  ? 'No bands matched this search.'
+                  : isArtistSearch
+                    ? 'No artists matched this search.'
+                    : 'Search is ready to connect to the music catalog.'}
+              </Typography>
+            </Stack>
+          </Paper>
         )}
-      </section>
-    </main>
+      </Box>
+    </Box>
   )
 }
 
