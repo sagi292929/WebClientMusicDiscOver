@@ -14,12 +14,12 @@ import Typography from '@mui/material/Typography'
 import { formatActiveYears } from '../components/MusicEntrance/utils'
 import {
   GetArtistAndAboutDocument,
-  GetBandDocument,
   type GetArtistAndAboutQuery,
   type GetArtistAndAboutQueryVariables,
+  GetBandDocument,
   type GetBandQuery,
   type GetBandQueryVariables,
-} from '../gql/generated'
+} from '../gql/operations'
 
 const artistResultFieldOrder = ['Name', 'Born in', 'Band', 'Instruments'] as const
 
