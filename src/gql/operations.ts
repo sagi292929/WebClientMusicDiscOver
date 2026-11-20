@@ -1,5 +1,6 @@
 import { gql } from '@apollo/client'
 import type {
+  AlbumMatch,
   AllAboutArtist,
   ArtistBand,
   ArtistDatabaseDetails,
@@ -7,7 +8,46 @@ import type {
   ArtistMatch,
   BandMatch,
   Maybe,
+  SongMatch,
 } from './generated'
+
+export type GetSongQueryVariables = {
+  name: string
+}
+
+export type GetSongQuery = {
+  getSong: Array<Pick<SongMatch, 'es_id' | 'name' | 'band_name'>>
+}
+
+export const GetSongDocument = gql`
+  query GetSong($name: String!) {
+    getSong(name: $name) {
+      es_id
+      name
+      band_name
+    }
+  }
+`
+
+export type GetAlbumQueryVariables = {
+  name: string
+}
+
+export type GetAlbumQuery = {
+  getAlbum: Array<Pick<AlbumMatch, 'Id' | 'title' | 'bandName' | 'year' | 'lengthMinutes'>>
+}
+
+export const GetAlbumDocument = gql`
+  query GetAlbum($name: String!) {
+    getAlbum(name: $name) {
+      Id
+      title
+      bandName
+      year
+      lengthMinutes
+    }
+  }
+`
 
 export type GetBandQueryVariables = {
   name: string

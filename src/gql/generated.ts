@@ -14,6 +14,15 @@ export type Scalars = {
   Float: { input: number; output: number; }
 };
 
+export type AlbumMatch = {
+  __typename?: 'AlbumMatch';
+  Id: Scalars['Int']['output'];
+  bandName: Scalars['String']['output'];
+  lengthMinutes: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+  year: Scalars['Int']['output'];
+};
+
 export type AllAboutArtist = {
   __typename?: 'AllAboutArtist';
   born_in?: Maybe<Scalars['String']['output']>;
@@ -167,12 +176,19 @@ export type MainGenreGroup = {
 
 export type Query = {
   __typename?: 'Query';
+  getAlbum: Array<AlbumMatch>;
   getAllAboutArtist: Array<AllAboutArtist>;
   getAllAboutBand?: Maybe<AllAboutBandSummary>;
   getArtist: Array<ArtistMatch>;
   getBand: Array<BandMatch>;
   getGenre: Array<MainGenreGroup>;
+  getSong: Array<SongMatch>;
   searchBands: Array<Band>;
+};
+
+
+export type QueryGetAlbumArgs = {
+  name: Scalars['String']['input'];
 };
 
 
@@ -194,6 +210,11 @@ export type QueryGetArtistArgs = {
 
 
 export type QueryGetBandArgs = {
+  name: Scalars['String']['input'];
+};
+
+
+export type QueryGetSongArgs = {
   name: Scalars['String']['input'];
 };
 
@@ -331,6 +352,13 @@ export type SongDiscography = {
   studio_albums: Array<StudioAlbum>;
 };
 
+export type SongMatch = {
+  __typename?: 'SongMatch';
+  band_name: Scalars['String']['output'];
+  es_id: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+};
+
 export type StudioAlbum = {
   __typename?: 'StudioAlbum';
   id: Scalars['String']['output'];
@@ -338,6 +366,13 @@ export type StudioAlbum = {
   name: Scalars['String']['output'];
   year?: Maybe<Scalars['Int']['output']>;
 };
+
+export type GetAlbumQueryVariables = Exact<{
+  name: string;
+}>;
+
+
+export type GetAlbumQuery = { getAlbum: Array<{ Id: number, title: string, bandName: string, year: number, lengthMinutes: string }> };
 
 export type GetBandQueryVariables = Exact<{
   name: string;
@@ -359,6 +394,7 @@ export type GetArtistAndAboutQueryVariables = Exact<{
 export type GetArtistAndAboutQuery = { getArtist: Array<{ es_id: string, name: string, born_in: string | null }>, getAllAboutArtist: Array<{ es_id: string, name: string, born_in: string | null, database: { birthdate: string, band: { name: string }, instruments: Array<{ name: string, Type: string }> } | null }> };
 
 
+export const GetAlbumDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAlbum"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getAlbum"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"Id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"bandName"}},{"kind":"Field","name":{"kind":"Name","value":"year"}},{"kind":"Field","name":{"kind":"Name","value":"lengthMinutes"}}]}}]}}]} as unknown as DocumentNode<GetAlbumQuery, GetAlbumQueryVariables>;
 export const GetBandDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetBand"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getBand"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"active_years"}}]}}]}}]} as unknown as DocumentNode<GetBandQuery, GetBandQueryVariables>;
 export const GetGenreDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetGenre"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getGenre"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"main_genre"}},{"kind":"Field","name":{"kind":"Name","value":"genres"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"Id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<GetGenreQuery, GetGenreQueryVariables>;
 export const GetArtistAndAboutDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetArtistAndAbout"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getArtist"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"es_id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"born_in"}}]}},{"kind":"Field","name":{"kind":"Name","value":"getAllAboutArtist"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"es_id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"born_in"}},{"kind":"Field","name":{"kind":"Name","value":"database"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"birthdate"}},{"kind":"Field","name":{"kind":"Name","value":"band"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"instruments"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"Type"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetArtistAndAboutQuery, GetArtistAndAboutQueryVariables>;

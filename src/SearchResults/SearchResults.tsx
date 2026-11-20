@@ -13,12 +13,18 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { formatActiveYears } from '../components/MusicEntrance/utils'
 import {
+  GetAlbumDocument,
+  type GetAlbumQuery,
+  type GetAlbumQueryVariables,
   GetArtistAndAboutDocument,
   type GetArtistAndAboutQuery,
   type GetArtistAndAboutQueryVariables,
   GetBandDocument,
   type GetBandQuery,
   type GetBandQueryVariables,
+  GetSongDocument,
+  type GetSongQuery,
+  type GetSongQueryVariables,
 } from '../gql/operations'
 
 const artistResultFieldOrder = ['Name', 'Born in', 'Band', 'Instruments'] as const
@@ -72,6 +78,24 @@ type SearchResultsProps = {
 function SearchResults({ query, category, results, onBack }: SearchResultsProps) {
   const isBandSearch = category === 'Band'
   const isArtistSearch = category === 'Artist'
+  const isAlbumSearch = category === 'Album'
+  const isSongSearch = category === 'Song'
+  const {
+    data: songData,
+    loading: songLoading,
+    error: songError,
+  } = useQuery<GetSongQuery, GetSongQueryVariables>(GetSongDocument, {
+    variables: { name: query },
+    skip: !isSongSearch,
+  })
+  const {
+    data: albumData,
+    loading: albumLoading,
+    error: albumError,
+  } = useQuery<GetAlbumQuery, GetAlbumQueryVariables>(GetAlbumDocument, {
+    variables: { name: query },
+    skip: !isAlbumSearch,
+  })
   const { data: bandData, loading: bandLoading, error: bandError } = useQuery<
     GetBandQuery,
     GetBandQueryVariables
@@ -119,38 +143,76 @@ function SearchResults({ query, category, results, onBack }: SearchResultsProps)
           },
         ],
       }))
-    : isArtistSearch
-      ? [...artistMatches.values()].map((artist) => {
-          const details = artistDetailsById.get(artist.es_id)
-          const database = details?.database
-          const artistValues = {
-            Name: artist.name,
-            'Born in': artist.born_in ?? database?.birthdate ?? 'Not available',
-            Band: database?.band.name ?? 'Not available',
-            Instruments: database?.instruments
-              .map(({ name }) => formatInstrumentName(name))
-              .join(', ')
-              || 'Not available',
-          }
-          const [titleField, ...fields] = artistResultFieldOrder.map((label) => ({
-            label,
-            value: artistValues[label],
+    : isAlbumSearch
+      ? (albumData?.getAlbum ?? []).map((album) => ({
+          id: String(album.Id),
+          title: album.title,
+          subtitle: album.bandName,
+          category: 'Album',
+          fields: [
+            { label: 'Year', value: String(album.year) },
+            { label: 'Length', value: album.lengthMinutes },
+          ],
+        }))
+      : isSongSearch
+        ? (songData?.getSong ?? []).map((song) => ({
+            id: song.es_id,
+            title: song.name,
+            subtitle: song.band_name,
+            category: 'Song',
           }))
+        : isArtistSearch
+          ? [...artistMatches.values()].map((artist) => {
+              const details = artistDetailsById.get(artist.es_id)
+              const database = details?.database
+              const artistValues = {
+                Name: artist.name,
+                'Born in': artist.born_in ?? database?.birthdate ?? 'Not available',
+                Band: database?.band.name ?? 'Not available',
+                Instruments: database?.instruments
+                  .map(({ name }) => formatInstrumentName(name))
+                  .join(', ')
+                  || 'Not available',
+              }
+              const [titleField, ...fields] = artistResultFieldOrder.map((label) => ({
+                label,
+                value: artistValues[label],
+              }))
 
-          return {
-            id: artist.es_id,
-            title: titleField.value,
-            category: 'Artist',
-            fields,
-          }
-        })
-      : results
+              return {
+                id: artist.es_id,
+                title: titleField.value,
+                category: 'Artist',
+                fields,
+              }
+            })
+          : results
 
   const sortedResults = sortSearchResults(displayedResults, query)
-  const isLoading = (isBandSearch && bandLoading) || (isArtistSearch && artistLoading)
+  const isLoading =
+    (isAlbumSearch && albumLoading) ||
+    (isBandSearch && bandLoading) ||
+    (isSongSearch && songLoading) ||
+    (isArtistSearch && artistLoading)
   const showFatalError =
-    (isBandSearch && bandError) || (isArtistSearch && artistError && sortedResults.length === 0)
-  const errorMessage = isBandSearch ? bandError?.message : artistError?.message
+    (isAlbumSearch && albumError) ||
+    (isBandSearch && bandError) ||
+    (isSongSearch && songError) ||
+    (isArtistSearch && artistError && sortedResults.length === 0)
+  const errorMessage = isAlbumSearch
+    ? albumError?.message
+    : isBandSearch
+      ? bandError?.message
+      : isSongSearch
+        ? songError?.message
+        : artistError?.message
+  const resultType = isAlbumSearch
+    ? 'album'
+    : isBandSearch
+      ? 'band'
+      : isSongSearch
+        ? 'song'
+        : 'artist'
 
   return (
     <Box
@@ -261,14 +323,14 @@ function SearchResults({ query, category, results, onBack }: SearchResultsProps)
             >
               <CircularProgress size={20} />
               <Typography component="strong" variant="body1">
-                {isBandSearch ? 'Searching bands…' : 'Searching artists…'}
+                Searching {resultType}s…
               </Typography>
             </Stack>
           </Paper>
         ) : showFatalError ? (
           <Alert severity="error" role="alert">
             <AlertTitle>
-              {isBandSearch ? 'Could not load band results' : 'Could not load artist results'}
+              Could not load {resultType} results
             </AlertTitle>
             {errorMessage}
           </Alert>
@@ -385,11 +447,15 @@ function SearchResults({ query, category, results, onBack }: SearchResultsProps)
                 Results will appear here
               </Typography>
               <Typography component="span" variant="body2" color="text.secondary">
-                {isBandSearch
-                  ? 'No bands matched this search.'
-                  : isArtistSearch
-                    ? 'No artists matched this search.'
-                    : 'Search is ready to connect to the music catalog.'}
+                {isAlbumSearch
+                  ? 'No albums matched this search.'
+                  : isBandSearch
+                    ? 'No bands matched this search.'
+                    : isSongSearch
+                      ? 'No songs matched this search.'
+                      : isArtistSearch
+                        ? 'No artists matched this search.'
+                        : 'Search is ready to connect to the music catalog.'}
               </Typography>
             </Stack>
           </Paper>
