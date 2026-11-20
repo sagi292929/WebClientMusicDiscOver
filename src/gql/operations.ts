@@ -6,8 +6,20 @@ import type {
   ArtistDatabaseDetails,
   ArtistInstrument,
   ArtistMatch,
+  AllAboutBandSummary,
+  Band,
+  BandAlbum,
+  BandMember,
+  BandSongHit,
   BandMatch,
   Maybe,
+  SqlAlbumSong,
+  SqlAlbumSummary,
+  SqlArtistSummary,
+  SqlBandSummary,
+  SqlInstrumentSummary,
+  SqlSong,
+  StudioAlbum,
   SongMatch,
 } from './generated'
 
@@ -63,6 +75,179 @@ export const GetBandDocument = gql`
       id
       name
       active_years
+    }
+  }
+`
+
+type BandSqlArtistDetails = Pick<SqlArtistSummary, 'birthdate' | 'es_id' | 'name'> & {
+  artistInstruments: Array<{
+    instrument: Pick<SqlInstrumentSummary, 'Type' | 'name'>
+  }>
+}
+
+type BandSqlAlbumDetails = Pick<SqlAlbumSummary, 'lengthMinutes' | 'title' | 'year'> & {
+  albumArtists: Array<{
+    artist: BandSqlArtistDetails
+  }>
+  albumSongs: Array<
+    Pick<SqlAlbumSong, 'albumId' | 'songId' | 'trackNumber'> & {
+      song: Pick<SqlSong, 'Id' | 'achievement' | 'hit' | 'title' | 'year'>
+    }
+  >
+}
+
+type BandElasticsearchDetails = Pick<Band, 'active_years' | 'genres' | 'id' | 'inserted_at' | 'name'> & {
+  albums: Array<Pick<BandAlbum, 'id' | 'length_minutes' | 'name' | 'year'>>
+  members: Array<Pick<BandMember, 'id' | 'name'>>
+  songs_hits: Array<
+    Pick<BandSongHit, 'achievement' | 'title' | 'year'> & {
+      discography?: Maybe<{
+        studio_albums: Array<Pick<StudioAlbum, 'id' | 'length_minutes' | 'name' | 'year'>>
+      }>
+    }
+  >
+}
+
+type BandDatabaseDetails = Pick<
+  SqlBandSummary,
+  'Id' | 'es_id' | 'name' | 'officialWebsite' | 'origin' | 'rockAndRollHallOfFameInduction'
+> & {
+  albums: BandSqlAlbumDetails[]
+  artists: BandSqlArtistDetails[]
+}
+
+export type GetAllAboutBandQueryVariables = {
+  id: string
+}
+
+export type GetAllAboutBandQuery = {
+  getAllAboutBand?: Maybe<
+    Pick<AllAboutBandSummary, 'active_years' | 'genres' | 'id' | 'inserted_at' | 'name'> & {
+      albums: Array<Pick<BandAlbum, 'id' | 'length_minutes' | 'name' | 'year'>>
+      database?: Maybe<BandDatabaseDetails>
+      elasticsearch?: Maybe<BandElasticsearchDetails>
+      members: Array<Pick<BandMember, 'id' | 'name'>>
+      songs_hits: Array<
+        Pick<BandSongHit, 'achievement' | 'title' | 'year'> & {
+          discography?: Maybe<{
+            studio_albums: Array<Pick<StudioAlbum, 'id' | 'length_minutes' | 'name' | 'year'>>
+          }>
+        }
+      >
+    }
+  >
+}
+
+export const GetAllAboutBandDocument = gql`
+  query GetAllAboutBand($id: String!) {
+    getAllAboutBand(id: $id) {
+      id
+      name
+      active_years
+      genres
+      inserted_at
+      members {
+        id
+        name
+      }
+      albums {
+        id
+        name
+        year
+        length_minutes
+      }
+      songs_hits {
+        title
+        year
+        achievement
+        discography {
+          studio_albums {
+            id
+            name
+            year
+            length_minutes
+          }
+        }
+      }
+      database {
+        Id
+        es_id
+        name
+        origin
+        officialWebsite
+        rockAndRollHallOfFameInduction
+        artists {
+          es_id
+          name
+          birthdate
+          artistInstruments {
+            instrument {
+              name
+              Type
+            }
+          }
+        }
+        albums {
+          title
+          year
+          lengthMinutes
+          albumArtists {
+            artist {
+              es_id
+              name
+              birthdate
+              artistInstruments {
+                instrument {
+                  name
+                  Type
+                }
+              }
+            }
+          }
+          albumSongs {
+            albumId
+            songId
+            trackNumber
+            song {
+              Id
+              title
+              year
+              achievement
+              hit
+            }
+          }
+        }
+      }
+      elasticsearch {
+        id
+        name
+        active_years
+        genres
+        inserted_at
+        members {
+          id
+          name
+        }
+        albums {
+          id
+          name
+          year
+          length_minutes
+        }
+        songs_hits {
+          title
+          year
+          achievement
+          discography {
+            studio_albums {
+              id
+              name
+              year
+              length_minutes
+            }
+          }
+        }
+      }
     }
   }
 `

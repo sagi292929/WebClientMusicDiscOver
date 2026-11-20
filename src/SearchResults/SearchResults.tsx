@@ -7,6 +7,7 @@ import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
 import List from '@mui/material/List'
 import ListItem from '@mui/material/ListItem'
+import ListItemButton from '@mui/material/ListItemButton'
 import Link from '@mui/material/Link'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
@@ -73,9 +74,10 @@ type SearchResultsProps = {
   category: string
   results: SearchResultItem[]
   onBack: () => void
+  onSelectBand: (band: { id: string; name: string }) => void
 }
 
-function SearchResults({ query, category, results, onBack }: SearchResultsProps) {
+function SearchResults({ query, category, results, onBack, onSelectBand }: SearchResultsProps) {
   const isBandSearch = category === 'Band'
   const isArtistSearch = category === 'Artist'
   const isAlbumSearch = category === 'Album'
@@ -353,88 +355,102 @@ function SearchResults({ query, category, results, onBack }: SearchResultsProps)
                 bgcolor: 'background.paper',
               }}
             >
-              {sortedResults.map((result, index) => (
-                <ListItem
-                  component="li"
-                  key={result.id}
-                  divider={index < sortedResults.length - 1}
-                  sx={{
+              {sortedResults.map((result, index) => {
+                const rowContents = (
+                  <>
+                    <Typography
+                      component="span"
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontVariantNumeric: 'tabular-nums', minWidth: { xs: 'auto', sm: 3 } }}
+                    >
+                      {String(index + 1).padStart(2, '0')}
+                    </Typography>
+                    <Box
+                      aria-hidden="true"
+                      sx={{
+                        width: { xs: 40, sm: 48 },
+                        height: { xs: 40, sm: 48 },
+                        borderRadius: 1,
+                        bgcolor: 'action.selected',
+                        color: 'primary.main',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <i className="fa-solid fa-music" />
+                    </Box>
+                    <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography component="strong" variant="subtitle1" noWrap>
+                        {result.title}
+                      </Typography>
+                      {result.subtitle && (
+                        <Typography component="span" variant="body2" color="text.secondary" noWrap>
+                          {result.subtitle}
+                        </Typography>
+                      )}
+                      {result.fields?.map((field) => (
+                        <Typography
+                          key={field.label}
+                          component="span"
+                          variant="caption"
+                          color="text.secondary"
+                        >
+                          <Box component="strong" sx={{ color: 'text.primary' }}>
+                            {field.label}:
+                          </Box>{' '}
+                          {field.value}
+                        </Typography>
+                      ))}
+                    </Stack>
+                    {result.details && (
+                      <Typography
+                        component="span"
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ display: { xs: 'none', sm: 'block' } }}
+                      >
+                        {result.details}
+                      </Typography>
+                    )}
+                    <Chip
+                      label={result.category ?? category}
+                      size="small"
+                      sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+                    />
+                    <Box component="span" aria-hidden="true" sx={{ color: 'text.disabled' }}>
+                      <i className="fa-solid fa-chevron-right" />
+                    </Box>
+                  </>
+                )
+                const rowSx = {
                     gap: { xs: 1.5, sm: 2 },
                     minHeight: 82,
                     py: 1.5,
                     px: { xs: 1.5, sm: 2.5 },
                     alignItems: 'center',
-                    transition: 'background-color 150ms ease',
-                    '&:hover': { bgcolor: 'action.hover' },
-                  }}
-                >
-                  <Typography
-                    component="span"
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ fontVariantNumeric: 'tabular-nums', minWidth: { xs: 'auto', sm: 3 } }}
+                    borderBottom: index < sortedResults.length - 1 ? 1 : 0,
+                    borderColor: 'divider',
+                  }
+
+                return isBandSearch ? (
+                  <ListItemButton
+                    component="li"
+                    key={result.id}
+                    onClick={() => onSelectBand({ id: result.id, name: result.title })}
+                    aria-label={`View ${result.title} details`}
+                    sx={rowSx}
                   >
-                    {String(index + 1).padStart(2, '0')}
-                  </Typography>
-                  <Box
-                    aria-hidden="true"
-                    sx={{
-                      width: { xs: 40, sm: 48 },
-                      height: { xs: 40, sm: 48 },
-                      borderRadius: 1,
-                      bgcolor: 'action.selected',
-                      color: 'primary.main',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <i className="fa-solid fa-music" />
-                  </Box>
-                  <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography component="strong" variant="subtitle1" noWrap>
-                      {result.title}
-                    </Typography>
-                    {result.subtitle && (
-                      <Typography component="span" variant="body2" color="text.secondary" noWrap>
-                        {result.subtitle}
-                      </Typography>
-                    )}
-                    {result.fields?.map((field) => (
-                      <Typography
-                        key={field.label}
-                        component="span"
-                        variant="caption"
-                        color="text.secondary"
-                      >
-                        <Box component="strong" sx={{ color: 'text.primary' }}>
-                          {field.label}:
-                        </Box>{' '}
-                        {field.value}
-                      </Typography>
-                    ))}
-                  </Stack>
-                  {result.details && (
-                    <Typography
-                      component="span"
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ display: { xs: 'none', sm: 'block' } }}
-                    >
-                      {result.details}
-                    </Typography>
-                  )}
-                  <Chip
-                    label={result.category ?? category}
-                    size="small"
-                    sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
-                  />
-                  <Box component="span" aria-hidden="true" sx={{ color: 'text.disabled' }}>
-                    <i className="fa-solid fa-chevron-right" />
-                  </Box>
-                </ListItem>
-              ))}
+                    {rowContents}
+                  </ListItemButton>
+                ) : (
+                  <ListItem component="li" key={result.id} sx={rowSx}>
+                    {rowContents}
+                  </ListItem>
+                )
+              })}
             </List>
           </Stack>
         ) : (
