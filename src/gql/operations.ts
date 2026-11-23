@@ -7,6 +7,7 @@ import type {
   ArtistInstrument,
   ArtistMatch,
   AllAboutBandSummary,
+  AllAboutGenre,
   Band,
   BandAlbum,
   BandMember,
@@ -37,6 +38,70 @@ export const GetSongDocument = gql`
       es_id
       name
       band_name
+    }
+  }
+`
+
+export type GetAllAboutSongQueryVariables = {
+  id: number
+}
+
+type SongDatabaseDetails = Pick<SqlSong, 'achievement' | 'hit' | 'title' | 'year'>
+
+export type GetAllAboutSongQuery = {
+  getAllAboutSong?: Maybe<{
+    database?: Maybe<SongDatabaseDetails>
+    elasticsearch?: Maybe<unknown>
+  }>
+}
+
+export const GetAllAboutSongDocument = gql`
+  query GetAllAboutSong($id: Int!) {
+    getAllAboutSong(id: $id) {
+      database {
+        title
+        year
+        achievement
+        hit
+      }
+      elasticsearch
+    }
+  }
+`
+
+export type GetBandSongIdsQueryVariables = {
+  id: string
+}
+
+export type GetBandSongIdsQuery = {
+  getAllAboutBand?: Maybe<{
+    database?: Maybe<
+      Pick<SqlBandSummary, 'albums'> & {
+        albums: Array<
+          Pick<SqlAlbumSummary, 'albumSongs'> & {
+            albumSongs: Array<{
+              song: Pick<SqlSong, 'Id' | 'title'>
+            }>
+          }
+        >
+      }
+    >
+  }>
+}
+
+export const GetBandSongIdsDocument = gql`
+  query GetBandSongIds($id: String!) {
+    getAllAboutBand(id: $id) {
+      database {
+        albums {
+          albumSongs {
+            song {
+              Id
+              title
+            }
+          }
+        }
+      }
     }
   }
 `
@@ -252,9 +317,52 @@ export const GetAllAboutBandDocument = gql`
   }
 `
 
+export type GetGenreQueryVariables = {
+  name?: string | null
+}
+
+export type GetGenreQuery = {
+  getGenre: Array<{
+    main_genre: string | null
+    genres: Array<{
+      Id: number
+      name: string
+    }>
+  }>
+}
+
+export type GetAllAboutGenreQueryVariables = {
+  id: number
+}
+
+export type GetAllAboutGenreQuery = {
+  getAllAboutGenre?: Maybe<
+    Pick<AllAboutGenre, 'Id' | 'main_genre' | 'name'> & {
+      bands: Array<Pick<AllAboutGenre['bands'][number], 'Id' | 'es_id' | 'name' | 'officialWebsite' | 'origin'>>
+    }
+  >
+}
+
+export const GetAllAboutGenreDocument = gql`
+  query GetAllAboutGenre($id: Int!) {
+    getAllAboutGenre(id: $id) {
+      Id
+      name
+      main_genre
+      bands {
+        Id
+        es_id
+        name
+        officialWebsite
+        origin
+      }
+    }
+  }
+`
+
 export const GetGenreDocument = gql`
-  query GetGenre {
-    getGenre {
+  query GetGenre($name: String) {
+    getGenre(name: $name) {
       main_genre
       genres {
         Id

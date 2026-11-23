@@ -1,4 +1,6 @@
-import { useQuery } from '@apollo/client/react'
+import { useApolloClient, useQuery } from '@apollo/client/react'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Alert from '@mui/material/Alert'
 import AlertTitle from '@mui/material/AlertTitle'
 import Box from '@mui/material/Box'
@@ -21,8 +23,14 @@ import {
   type GetArtistAndAboutQuery,
   type GetArtistAndAboutQueryVariables,
   GetBandDocument,
+  GetBandSongIdsDocument,
   type GetBandQuery,
   type GetBandQueryVariables,
+  type GetBandSongIdsQuery,
+  type GetBandSongIdsQueryVariables,
+  GetGenreDocument,
+  type GetGenreQuery,
+  type GetGenreQueryVariables,
   GetSongDocument,
   type GetSongQuery,
   type GetSongQueryVariables,
@@ -74,14 +82,23 @@ type SearchResultsProps = {
   category: string
   results: SearchResultItem[]
   onBack: () => void
-  onSelectBand: (band: { id: string; name: string }) => void
 }
 
-function SearchResults({ query, category, results, onBack, onSelectBand }: SearchResultsProps) {
+function SearchResults({
+  query,
+  category,
+  results,
+  onBack,
+}: SearchResultsProps) {
+  const apolloClient = useApolloClient()
+  const navigate = useNavigate()
+  const [songNavigationLoading, setSongNavigationLoading] = useState(false)
+  const [songNavigationError, setSongNavigationError] = useState<string | null>(null)
   const isBandSearch = category === 'Band'
   const isArtistSearch = category === 'Artist'
   const isAlbumSearch = category === 'Album'
   const isSongSearch = category === 'Song'
+  const isGenreSearch = category === 'Genre'
   const {
     data: songData,
     loading: songLoading,
@@ -117,6 +134,58 @@ function SearchResults({ query, category, results, onBack, onSelectBand }: Searc
       errorPolicy: 'all',
     },
   )
+  const {
+    data: genreData,
+    loading: genreLoading,
+    error: genreError,
+  } = useQuery<GetGenreQuery, GetGenreQueryVariables>(GetGenreDocument, {
+    variables: { name: query },
+    skip: !isGenreSearch,
+  })
+
+  async function openSongDetails(songName: string, bandName: string) {
+    setSongNavigationLoading(true)
+    setSongNavigationError(null)
+
+    try {
+      const bands = await apolloClient.query<GetBandQuery, GetBandQueryVariables>({
+        query: GetBandDocument,
+        variables: { name: bandName },
+        fetchPolicy: 'network-only',
+      })
+      const band = bands.data?.getBand.find(
+        (match) => match.name.toLowerCase() === bandName.toLowerCase(),
+      )
+      if (!band) {
+        throw new Error(`Could not find ${bandName} in the band search results.`)
+      }
+
+      const bandDetails = await apolloClient.query<
+        GetBandSongIdsQuery,
+        GetBandSongIdsQueryVariables
+      >({
+        query: GetBandSongIdsDocument,
+        variables: { id: band.id },
+        fetchPolicy: 'network-only',
+      })
+      const song = bandDetails.data?.getAllAboutBand?.database?.albums
+        .flatMap((album) => album.albumSongs)
+        .map(({ song: albumSong }) => albumSong)
+        .find((albumSong) => albumSong.title.trim().toLowerCase() === songName.trim().toLowerCase())
+
+      if (!song) {
+        throw new Error(`Could not find a database ID for ${songName}.`)
+      }
+
+      navigate(`/songs/${song.Id}`)
+    } catch (error) {
+      setSongNavigationError(
+        error instanceof Error ? error.message : 'Could not load song details.',
+      )
+    } finally {
+      setSongNavigationLoading(false)
+    }
+  }
 
   const artistDetailsById = new Map(
     (artistData?.getAllAboutArtist ?? []).map((artist) => [artist.es_id, artist]),
@@ -188,33 +257,48 @@ function SearchResults({ query, category, results, onBack, onSelectBand }: Searc
                 fields,
               }
             })
-          : results
+          : isGenreSearch
+            ? (genreData?.getGenre ?? []).flatMap(({ main_genre: mainGenre, genres }) =>
+                genres.map((genre) => ({
+                  id: String(genre.Id),
+                  title: genre.name,
+                  subtitle: mainGenre ?? undefined,
+                  category: 'Genre',
+                })),
+              )
+            : results
 
   const sortedResults = sortSearchResults(displayedResults, query)
   const isLoading =
     (isAlbumSearch && albumLoading) ||
     (isBandSearch && bandLoading) ||
     (isSongSearch && songLoading) ||
-    (isArtistSearch && artistLoading)
+    (isArtistSearch && artistLoading) ||
+    (isGenreSearch && genreLoading)
   const showFatalError =
     (isAlbumSearch && albumError) ||
     (isBandSearch && bandError) ||
     (isSongSearch && songError) ||
-    (isArtistSearch && artistError && sortedResults.length === 0)
+    (isArtistSearch && artistError && sortedResults.length === 0) ||
+    (isGenreSearch && genreError)
   const errorMessage = isAlbumSearch
     ? albumError?.message
     : isBandSearch
       ? bandError?.message
       : isSongSearch
         ? songError?.message
-        : artistError?.message
+        : isGenreSearch
+          ? genreError?.message
+          : artistError?.message
   const resultType = isAlbumSearch
     ? 'album'
     : isBandSearch
       ? 'band'
       : isSongSearch
         ? 'song'
-        : 'artist'
+        : isGenreSearch
+          ? 'genre'
+          : 'artist'
 
   return (
     <Box
@@ -329,6 +413,25 @@ function SearchResults({ query, category, results, onBack, onSelectBand }: Searc
               </Typography>
             </Stack>
           </Paper>
+        ) : songNavigationLoading ? (
+          <Paper variant="outlined" sx={{ p: 4 }}>
+            <Stack
+              direction="row"
+              spacing={1.5}
+              role="status"
+              sx={{ alignItems: 'center', justifyContent: 'center' }}
+            >
+              <CircularProgress size={20} />
+              <Typography component="strong" variant="body1">
+                Opening song details…
+              </Typography>
+            </Stack>
+          </Paper>
+        ) : songNavigationError ? (
+          <Alert severity="error" role="alert">
+            <AlertTitle>Could not open song details</AlertTitle>
+            {songNavigationError}
+          </Alert>
         ) : showFatalError ? (
           <Alert severity="error" role="alert">
             <AlertTitle>
@@ -435,12 +538,24 @@ function SearchResults({ query, category, results, onBack, onSelectBand }: Searc
                     borderColor: 'divider',
                   }
 
-                return isBandSearch ? (
+                return isBandSearch || isGenreSearch || isSongSearch ? (
                   <ListItemButton
                     component="li"
                     key={result.id}
-                    onClick={() => onSelectBand({ id: result.id, name: result.title })}
+                    onClick={() => {
+                      if (isBandSearch) {
+                        navigate(`/bands/${encodeURIComponent(result.id)}`)
+                      } else if (isGenreSearch) {
+                        navigate(`/genres/${encodeURIComponent(result.id)}`)
+                      } else {
+                        void openSongDetails(
+                          result.title,
+                          result.subtitle ?? 'Unknown band',
+                        )
+                      }
+                    }}
                     aria-label={`View ${result.title} details`}
+                    disabled={isSongSearch && songNavigationLoading}
                     sx={rowSx}
                   >
                     {rowContents}
@@ -471,7 +586,9 @@ function SearchResults({ query, category, results, onBack, onSelectBand }: Searc
                       ? 'No songs matched this search.'
                       : isArtistSearch
                         ? 'No artists matched this search.'
-                        : 'Search is ready to connect to the music catalog.'}
+                        : isGenreSearch
+                          ? 'No genres matched this search.'
+                          : 'Search is ready to connect to the music catalog.'}
               </Typography>
             </Stack>
           </Paper>

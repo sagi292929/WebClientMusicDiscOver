@@ -19,7 +19,6 @@ import {
 
 type BandPageProps = {
   id: string
-  name: string
   onBack: () => void
 }
 
@@ -47,7 +46,7 @@ function DetailValue({ label, value }: { label: string; value: string | number }
   )
 }
 
-function BandPage({ id, name, onBack }: BandPageProps) {
+function BandPage({ id, onBack }: BandPageProps) {
   const { data, loading, error } = useQuery<
     GetAllAboutBandQuery,
     GetAllAboutBandQueryVariables
@@ -121,7 +120,7 @@ function BandPage({ id, name, onBack }: BandPageProps) {
               lineHeight: 1.08,
             }}
           >
-            {band?.name ?? name}
+            {band?.name ?? 'Band details'}
           </Typography>
 
           {loading && (
