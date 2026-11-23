@@ -538,7 +538,7 @@ function SearchResults({
                     borderColor: 'divider',
                   }
 
-                return isBandSearch || isGenreSearch || isSongSearch ? (
+                return isBandSearch || isGenreSearch || isSongSearch || isArtistSearch ? (
                   <ListItemButton
                     component="li"
                     key={result.id}
@@ -547,6 +547,13 @@ function SearchResults({
                         navigate(`/bands/${encodeURIComponent(result.id)}`)
                       } else if (isGenreSearch) {
                         navigate(`/genres/${encodeURIComponent(result.id)}`)
+                      } else if (isArtistSearch) {
+                        navigate(`/artists/${encodeURIComponent(result.id)}`, {
+                          state: {
+                            searchQuery: query,
+                            artistName: result.title,
+                          },
+                        })
                       } else {
                         void openSongDetails(
                           result.title,

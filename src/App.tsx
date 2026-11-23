@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Navigate, Outlet, Route, Routes, useNavigate, useParams } from 'react-router-dom'
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import BandPage from './features/band/Band'
 import GenrePage from './features/genre/Genre'
 import SongPage from './features/song/Song'
 import MusicEntrance from './features/music-entrance/MusicEntrance'
 import MenuPage from './pages/MenuPage'
 import SearchResults from './features/search/SearchResults'
+import ArtistPage from './features/artist/Artist'
 
 function SongRoute() {
   const { id } = useParams()
@@ -26,6 +27,22 @@ function GenreRoute() {
   const navigate = useNavigate()
 
   return <GenrePage id={id ?? ''} onBack={() => navigate('/')} />
+}
+
+function ArtistRoute() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const state = location.state as { searchQuery?: string; artistName?: string } | null
+
+  return (
+    <ArtistPage
+      id={id ?? ''}
+      name={state?.artistName ?? ''}
+      searchQuery={state?.searchQuery ?? ''}
+      onBack={() => navigate('/')}
+    />
+  )
 }
 
 function App() {
@@ -58,6 +75,7 @@ function App() {
         <Route path="bands/:id" element={<BandRoute />} />
         <Route path="genres/:id" element={<GenreRoute />} />
         <Route path="songs/:id" element={<SongRoute />} />
+        <Route path="artists/:id" element={<ArtistRoute />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

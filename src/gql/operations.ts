@@ -415,3 +415,106 @@ export const GetArtistAndAboutDocument = gql`
     }
   }
 `
+
+export type GetAllAboutArtistQueryVariables = {
+  name: string
+  limit: number
+}
+
+export type GetAllAboutArtistQuery = {
+  getAllAboutArtist: Array<{
+    es_id: string
+    name: string
+    born_in?: Maybe<string>
+    former_bands: string[]
+    elasticsearch: {
+      es_id: string
+      name: string
+      born_in?: Maybe<string>
+      former_bands: string[]
+    }
+    database?: Maybe<{
+      Id: number
+      es_id: string
+      name: string
+      birthdate: string
+      band: {
+        Id: number
+        es_id: string
+        name: string
+        officialWebsite: string
+        origin: string
+        rockAndRollHallOfFameInduction?: Maybe<number>
+      }
+      instruments: Array<{
+        name: string
+        Type: string
+      }>
+      albums: Array<{
+        albumId: number
+        album: {
+          Id: number
+          title: string
+          year: number
+          lengthMinutes: string
+          songs: Array<{
+            achievement: string
+            hit: boolean
+            title: string
+            year: number
+          }>
+        }
+      }>
+    }>
+  }>
+}
+
+export const GetAllAboutArtistDocument = gql`
+  query GetAllAboutArtist($name: String!, $limit: Int!) {
+    getAllAboutArtist(name: $name, limit: $limit) {
+      es_id
+      name
+      born_in
+      former_bands
+      elasticsearch {
+        es_id
+        name
+        born_in
+        former_bands
+      }
+      database {
+        Id
+        es_id
+        name
+        birthdate
+        band {
+          Id
+          es_id
+          name
+          officialWebsite
+          origin
+          rockAndRollHallOfFameInduction
+        }
+        instruments {
+          name
+          Type
+        }
+        albums {
+          albumId
+          album {
+            Id
+            title
+            year
+            lengthMinutes
+            songs {
+              achievement
+              hit
+              title
+              year
+            }
+          }
+        }
+      }
+    }
+  }
+`
