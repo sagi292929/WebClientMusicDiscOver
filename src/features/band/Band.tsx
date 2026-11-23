@@ -10,12 +10,12 @@ import Link from '@mui/material/Link'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import { formatActiveYears } from '../components/MusicEntrance/utils'
+import { formatActiveYears } from '../music-entrance/utils'
 import {
   GetAllAboutBandDocument,
   type GetAllAboutBandQuery,
   type GetAllAboutBandQueryVariables,
-} from '../gql/operations'
+} from '../../gql/operations'
 
 type BandPageProps = {
   id: string

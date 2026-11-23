@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Navigate, Outlet, Route, Routes, useNavigate, useParams } from 'react-router-dom'
-import BandPage from './Band/Band'
-import GenrePage from './Genre/Genre'
-import SongPage from './Song/Song'
-import MusicEntrance from './components/MusicEntrance/MusicEntrance'
-import MenuPage from './components/MenuPage/MenuPage'
-import SearchResults from './SearchResults/SearchResults'
+import BandPage from './features/band/Band'
+import GenrePage from './features/genre/Genre'
+import SongPage from './features/song/Song'
+import MusicEntrance from './features/music-entrance/MusicEntrance'
+import MenuPage from './pages/MenuPage'
+import SearchResults from './features/search/SearchResults'
 
 function SongRoute() {
   const { id } = useParams()

@@ -12,7 +12,7 @@ import {
   GetAllAboutSongDocument,
   type GetAllAboutSongQuery,
   type GetAllAboutSongQueryVariables,
-} from '../gql/operations'
+} from '../../gql/operations'
 
 type SongPageProps = {
   id: string

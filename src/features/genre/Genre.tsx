@@ -14,7 +14,7 @@ import {
   GetAllAboutGenreDocument,
   type GetAllAboutGenreQuery,
   type GetAllAboutGenreQueryVariables,
-} from '../gql/operations'
+} from '../../gql/operations'
 
 type GenrePageProps = {
   id: string

@@ -13,8 +13,8 @@ import List from '@mui/material/List'
 import ListItem from '@mui/material/ListItem'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import { GetGenreDocument } from '../../gql/operations'
-import type { GetGenreQuery } from '../../gql/generated'
+import { GetGenreDocument } from '../gql/operations'
+import type { GetGenreQuery } from '../gql/generated'
 
 type MenuPageProps = {
   onHome: () => void

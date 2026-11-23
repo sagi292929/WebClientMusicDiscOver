@@ -14,7 +14,7 @@ import Link from '@mui/material/Link'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import { formatActiveYears } from '../components/MusicEntrance/utils'
+import { formatActiveYears } from '../music-entrance/utils'
 import {
   GetAlbumDocument,
   type GetAlbumQuery,
@@ -34,7 +34,7 @@ import {
   GetSongDocument,
   type GetSongQuery,
   type GetSongQueryVariables,
-} from '../gql/operations'
+} from '../../gql/operations'
 
 const artistResultFieldOrder = ['Name', 'Born in', 'Band', 'Instruments'] as const
 
