@@ -5,6 +5,9 @@ import GenrePage from './features/genre/Genre'
 import SongPage from './features/song/Song'
 import MusicEntrance from './features/music-entrance/MusicEntrance'
 import MenuPage from './pages/MenuPage'
+import SignInPage from './pages/User/SignInPage'
+import CreateAccountPage from './pages/User/CreateAccountPage'
+import LoginPage from './pages/User/LoginPage'
 import SearchResults from './features/search/SearchResults'
 import ArtistPage from './features/artist/Artist'
 import AlbumPage from './features/album/Album'
@@ -56,10 +59,17 @@ function ArtistRoute() {
 function App() {
   const [search, setSearch] = useState<{ query: string; category: string } | null>(null)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [loggedInUser, setLoggedInUser] = useState<string | null>(null)
 
   return (
     <Routes>
       <Route path="/" element={<Outlet />}>
+        <Route path="sign-in" element={<SignInPage />} />
+        <Route path="create-account" element={<CreateAccountPage />} />
+        <Route
+          path="login"
+          element={<LoginPage onLoginSuccess={setLoggedInUser} />}
+        />
         <Route
           index
           element={
@@ -76,6 +86,7 @@ function App() {
               <MusicEntrance
                 onSearch={(query, category) => setSearch({ query, category })}
                 onOpenMenu={() => setIsMenuOpen(true)}
+                userName={loggedInUser}
               />
             )
           }

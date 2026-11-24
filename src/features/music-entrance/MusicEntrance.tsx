@@ -1,15 +1,18 @@
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import IconButton from '@mui/material/IconButton'
 import Link from '@mui/material/Link'
 import Typography from '@mui/material/Typography'
+import { Link as RouterLink } from 'react-router-dom'
 import MusicSearchForm from './MusicSearchForm'
 
 type MusicEntranceProps = {
   onSearch: (query: string, category: string) => void
   onOpenMenu: () => void
+  userName: string | null
 }
 
-function MusicEntrance({ onSearch, onOpenMenu }: MusicEntranceProps) {
+function MusicEntrance({ onSearch, onOpenMenu, userName }: MusicEntranceProps) {
   return (
     <Box component="main" sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       <Box
@@ -62,9 +65,26 @@ function MusicEntrance({ onSearch, onOpenMenu }: MusicEntranceProps) {
               Music DiskOver
             </Typography>
           </Link>
+        </Box        >
+          <MusicSearchForm onSearch={onSearch} />
+          {userName && (
+            <Typography
+              component="span"
+              color="text.primary"
+              sx={{ flex: '0 0 auto', whiteSpace: 'nowrap' }}
+            >
+              {userName}
+            </Typography>
+          )}
+          <Button
+            component={RouterLink}
+            to="/sign-in"
+            variant="outlined"
+            sx={{ ml: 'auto', flex: '0 0 auto' }}
+          >
+            Sign in
+          </Button>
         </Box>
-        <MusicSearchForm onSearch={onSearch} />
-      </Box>
     </Box>
   )
 }

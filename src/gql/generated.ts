@@ -195,6 +195,24 @@ export type MainGenreGroup = {
   main_genre?: Maybe<Scalars['String']['output']>;
 };
 
+export type Mutation = {
+  __typename?: 'Mutation';
+  login?: Maybe<Scalars['String']['output']>;
+  saveUser: User;
+};
+
+
+export type MutationLoginArgs = {
+  name: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+};
+
+
+export type MutationSaveUserArgs = {
+  name: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+};
+
 export type Query = {
   __typename?: 'Query';
   getAlbum: Array<AlbumMatch>;
@@ -207,7 +225,10 @@ export type Query = {
   getBand: Array<BandMatch>;
   getGenre: Array<MainGenreGroup>;
   getSong: Array<SongMatch>;
+  getUser?: Maybe<User>;
+  getUsers: Array<User>;
   searchBands: Array<Band>;
+  userExists: Scalars['Boolean']['output'];
 };
 
 
@@ -263,8 +284,18 @@ export type QueryGetSongArgs = {
 };
 
 
+export type QueryGetUserArgs = {
+  id: Scalars['Int']['input'];
+};
+
+
 export type QuerySearchBandsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
+  name: Scalars['String']['input'];
+};
+
+
+export type QueryUserExistsArgs = {
   name: Scalars['String']['input'];
 };
 
@@ -428,6 +459,18 @@ export type StudioAlbum = {
   name: Scalars['String']['output'];
   year?: Maybe<Scalars['Int']['output']>;
 };
+
+export type User = {
+  __typename?: 'User';
+  Id: Scalars['Int']['output'];
+  name: Scalars['String']['output'];
+  role: UserRole;
+};
+
+export enum UserRole {
+  Admin = 'Admin',
+  User = 'User'
+}
 
 export type GetSongQueryVariables = Exact<{
   name: string;

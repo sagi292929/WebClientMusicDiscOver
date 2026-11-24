@@ -22,7 +22,38 @@ import type {
   SqlSong,
   StudioAlbum,
   SongMatch,
+  MutationSaveUserArgs,
+  MutationLoginArgs,
+  User,
 } from './generated'
+
+export type LoginMutationVariables = MutationLoginArgs
+
+export type LoginMutation = {
+  login?: string | null
+}
+
+export const LoginDocument = gql`
+  mutation Login($name: String!, $password: String!) {
+    login(name: $name, password: $password)
+  }
+`
+
+export type SaveUserMutationVariables = MutationSaveUserArgs
+
+export type SaveUserMutation = {
+  saveUser: Pick<User, 'Id' | 'name' | 'role'>
+}
+
+export const SaveUserDocument = gql`
+  mutation SaveUser($name: String!, $password: String!) {
+    saveUser(name: $name, password: $password) {
+      Id
+      name
+      role
+    }
+  }
+`
 
 export type GetSongQueryVariables = {
   name: string
