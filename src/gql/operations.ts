@@ -111,17 +111,62 @@ export type GetAlbumQueryVariables = {
 }
 
 export type GetAlbumQuery = {
-  getAlbum: Array<Pick<AlbumMatch, 'Id' | 'title' | 'bandName' | 'year' | 'lengthMinutes'>>
+  getAlbum: Array<Pick<AlbumMatch, 'es_id' | 'name' | 'band_name'>>
 }
 
 export const GetAlbumDocument = gql`
   query GetAlbum($name: String!) {
     getAlbum(name: $name) {
-      Id
-      title
-      bandName
-      year
-      lengthMinutes
+      es_id
+      name
+      band_name
+    }
+  }
+`
+
+export type GetAllAboutAlbumQueryVariables = {
+  id: string
+}
+
+export type GetAllAboutAlbumQuery = {
+  getAllAboutAlbum?: Maybe<{
+    id: string
+    database?: Maybe<{
+      Id: number
+      BandId: number
+      albumSongs: Array<{
+        albumId: number
+        songId: number
+        trackNumber: number
+        song: Pick<SqlSong, 'Id' | 'achievement' | 'es_id' | 'hit' | 'title' | 'year'>
+      }>
+    }>
+    elasticsearch?: Maybe<unknown>
+  }>
+}
+
+export const GetAllAboutAlbumDocument = gql`
+  query GetAllAboutAlbum($id: String!) {
+    getAllAboutAlbum(id: $id) {
+      id
+      database {
+        Id
+        BandId
+        albumSongs {
+          albumId
+          songId
+          trackNumber
+          song {
+            Id
+            achievement
+            es_id
+            hit
+            title
+            year
+          }
+        }
+      }
+      elasticsearch
     }
   }
 `

@@ -7,12 +7,20 @@ import MusicEntrance from './features/music-entrance/MusicEntrance'
 import MenuPage from './pages/MenuPage'
 import SearchResults from './features/search/SearchResults'
 import ArtistPage from './features/artist/Artist'
+import AlbumPage from './features/album/Album'
 
 function SongRoute() {
   const { id } = useParams()
   const navigate = useNavigate()
 
   return <SongPage id={id ?? ''} onBack={() => navigate('/')} />
+}
+
+function AlbumRoute() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+
+  return <AlbumPage id={id ?? ''} onBack={() => navigate('/')} />
 }
 
 function BandRoute() {
@@ -73,6 +81,7 @@ function App() {
           }
         />
         <Route path="bands/:id" element={<BandRoute />} />
+        <Route path="albums/:id" element={<AlbumRoute />} />
         <Route path="genres/:id" element={<GenreRoute />} />
         <Route path="songs/:id" element={<SongRoute />} />
         <Route path="artists/:id" element={<ArtistRoute />} />

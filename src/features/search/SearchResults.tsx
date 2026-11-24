@@ -216,14 +216,10 @@ function SearchResults({
       }))
     : isAlbumSearch
       ? (albumData?.getAlbum ?? []).map((album) => ({
-          id: String(album.Id),
-          title: album.title,
-          subtitle: album.bandName,
+          id: album.es_id,
+          title: album.name,
+          subtitle: album.band_name,
           category: 'Album',
-          fields: [
-            { label: 'Year', value: String(album.year) },
-            { label: 'Length', value: album.lengthMinutes },
-          ],
         }))
       : isSongSearch
         ? (songData?.getSong ?? []).map((song) => ({
@@ -538,13 +534,15 @@ function SearchResults({
                     borderColor: 'divider',
                   }
 
-                return isBandSearch || isGenreSearch || isSongSearch || isArtistSearch ? (
+                return isBandSearch || isGenreSearch || isSongSearch || isArtistSearch || isAlbumSearch ? (
                   <ListItemButton
                     component="li"
                     key={result.id}
                     onClick={() => {
                       if (isBandSearch) {
                         navigate(`/bands/${encodeURIComponent(result.id)}`)
+                      } else if (isAlbumSearch) {
+                        navigate(`/albums/${encodeURIComponent(result.id)}`)
                       } else if (isGenreSearch) {
                         navigate(`/genres/${encodeURIComponent(result.id)}`)
                       } else if (isArtistSearch) {
