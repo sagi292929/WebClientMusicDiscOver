@@ -6,10 +6,12 @@ import Button from '@mui/material/Button'
 import Link from '@mui/material/Link'
 import List from '@mui/material/List'
 import ListItem from '@mui/material/ListItem'
+import ListItemButton from '@mui/material/ListItemButton'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import CircularProgress from '@mui/material/CircularProgress'
+import { Link as RouterLink } from 'react-router-dom'
 import {
   GetAllAboutGenreDocument,
   type GetAllAboutGenreQuery,
@@ -143,28 +145,36 @@ function GenrePage({ id, onBack }: GenrePageProps) {
                   ) : (
                     <List disablePadding>
                       {genre.bands.map((band) => (
-                        <ListItem key={band.Id} divider sx={{ display: 'block', py: 1.5 }}>
-                          <Stack spacing={0.5}>
-                            <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 600 }}>
-                              {band.name}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              ID: {band.Id} · Catalog ID: {band.es_id}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Origin: {band.origin || 'Not available'}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Website:{' '}
-                              {band.officialWebsite ? (
-                                <Link href={band.officialWebsite} target="_blank" rel="noreferrer">
-                                  {band.officialWebsite}
-                                </Link>
-                              ) : (
-                                'Not available'
-                              )}
-                            </Typography>
-                          </Stack>
+                        <ListItem key={band.Id} divider sx={{ display: 'block', py: 1 }}>
+                          <ListItemButton
+                            component={RouterLink}
+                            to={`/bands/${encodeURIComponent(band.es_id)}`}
+                            state={{ returnTo: `/genres/${encodeURIComponent(id)}` }}
+                            aria-label={`View ${band.name} details`}
+                            sx={{ display: 'block', borderRadius: 1, px: 1, py: 1 }}
+                          >
+                            <Stack spacing={0.5}>
+                              <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                {band.name}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                ID: {band.Id} · Catalog ID: {band.es_id}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                Origin: {band.origin || 'Not available'}
+                              </Typography>
+                            </Stack>
+                          </ListItemButton>
+                          <Typography variant="body2" color="text.secondary" sx={{ px: 1, pt: 0.5 }}>
+                            Website:{' '}
+                            {band.officialWebsite ? (
+                              <Link href={band.officialWebsite} target="_blank" rel="noreferrer">
+                                {band.officialWebsite}
+                              </Link>
+                            ) : (
+                              'Not available'
+                            )}
+                          </Typography>
                         </ListItem>
                       ))}
                     </List>

@@ -51,7 +51,7 @@ function AlbumData({
       <Stack spacing={1}>
         {value.map((item, index) => (
           <Paper key={index} variant="outlined" sx={{ p: 1.5 }}>
-            <AlbumData value={item} />
+            <AlbumData value={item} omittedFields={omittedFields} />
           </Paper>
         ))}
       </Stack>
@@ -61,20 +61,27 @@ function AlbumData({
   }
 
   if (typeof value === 'object') {
-    const fields = Object.entries(value).filter(
-      ([field]) =>
-        field !== '__typename' &&
-        !omittedFields.includes(field),
-    )
+    const fields = Object.entries(value)
+      .filter(
+        ([field]) =>
+          field !== '__typename' &&
+          !omittedFields.includes(field),
+      )
+      .sort(([firstField], [secondField]) => {
+        const priority = (field: string) => (field === 'title' || field === 'song' ? 0 : 1)
+        return priority(firstField) - priority(secondField)
+      })
     return fields.length > 0 ? (
       <Stack component="dl" spacing={1} sx={{ m: 0 }}>
         {fields.map(([field, fieldValue]) => (
           <Box key={field}>
-            <Typography component="dt" variant="body2" sx={{ fontWeight: 600 }}>
-              {formatFieldLabel(field)}
-            </Typography>
-            <Box component="dd" sx={{ m: 0, mt: 0.25, pl: 1.5 }}>
-              <AlbumData value={fieldValue} />
+            {field !== 'song' && (
+              <Typography component="dt" variant="body2" sx={{ fontWeight: 600 }}>
+                {formatFieldLabel(field)}
+              </Typography>
+            )}
+            <Box component="dd" sx={{ m: 0, mt: field === 'song' ? 0 : 0.25, pl: field === 'song' ? 0 : 1.5 }}>
+              <AlbumData value={fieldValue} omittedFields={omittedFields} />
             </Box>
           </Box>
         ))}
@@ -164,7 +171,7 @@ function AlbumPage({ id, onBack }: AlbumPageProps) {
           id="album-title"
           sx={{ overflowWrap: 'anywhere', fontWeight: 700, letterSpacing: '-0.055em' }}
         >
-          {name}
+          The Album: {name}
         </Typography>
         {bandName && (
           <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 0.5, mb: 4 }}>
@@ -199,10 +206,13 @@ function AlbumPage({ id, onBack }: AlbumPageProps) {
         ) : album ? (
           <Stack spacing={2}>
             <Paper component="section" variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
-              <AlbumData value={album.database} omittedFields={['Id', 'BandId']} />
+              <AlbumData
+                value={album.database}
+                omittedFields={['Id', 'BandId', 'albumId', 'songId', 'es_id']}
+              />
             </Paper>
             <Paper component="section" variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
-              <AlbumData value={album.elasticsearch} omittedFields={['name']} />
+              <AlbumData value={album.elasticsearch} omittedFields={['name', 'es_id']} />
             </Paper>
           </Stack>
         ) : (

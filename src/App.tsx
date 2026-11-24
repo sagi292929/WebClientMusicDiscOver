@@ -22,15 +22,19 @@ function SongRoute() {
 function AlbumRoute() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const state = location.state as { returnTo?: string } | null
 
-  return <AlbumPage id={id ?? ''} onBack={() => navigate('/')} />
+  return <AlbumPage id={id ?? ''} onBack={() => navigate(state?.returnTo ?? '/')} />
 }
 
 function BandRoute() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const state = location.state as { returnTo?: string } | null
 
-  return <BandPage id={id ?? ''} onBack={() => navigate('/')} />
+  return <BandPage id={id ?? ''} onBack={() => navigate(state?.returnTo ?? '/')} />
 }
 
 function GenreRoute() {

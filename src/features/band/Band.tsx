@@ -1,4 +1,5 @@
-import { useQuery } from '@apollo/client/react'
+import { useApolloClient, useQuery } from '@apollo/client/react'
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 import Alert from '@mui/material/Alert'
 import AlertTitle from '@mui/material/AlertTitle'
@@ -7,11 +8,16 @@ import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
 import Link from '@mui/material/Link'
+import ListItemButton from '@mui/material/ListItemButton'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { formatActiveYears } from '../music-entrance/utils'
 import {
+  GetAlbumDocument,
+  type GetAlbumQuery,
+  type GetAlbumQueryVariables,
   GetAllAboutBandDocument,
   type GetAllAboutBandQuery,
   type GetAllAboutBandQueryVariables,
@@ -46,12 +52,73 @@ function DetailValue({ label, value }: { label: string; value: string | number }
   )
 }
 
+function normalizeName(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
 function BandPage({ id, onBack }: BandPageProps) {
+  const apolloClient = useApolloClient()
+  const navigate = useNavigate()
+  const [resolvingAlbum, setResolvingAlbum] = useState<string | null>(null)
+  const [albumNavigationError, setAlbumNavigationError] = useState<string | null>(null)
   const { data, loading, error } = useQuery<
     GetAllAboutBandQuery,
     GetAllAboutBandQueryVariables
   >(GetAllAboutBandDocument, { variables: { id } })
   const band = data?.getAllAboutBand
+
+  async function openAlbum(albumTitle: string) {
+    if (!band) return
+
+    setAlbumNavigationError(null)
+    const matchingBandAlbum = band.albums.find(
+      (candidate) => normalizeName(candidate.name) === normalizeName(albumTitle),
+    )
+    if (matchingBandAlbum) {
+      navigate(`/albums/${encodeURIComponent(matchingBandAlbum.id)}`, {
+        state: { returnTo: `/bands/${encodeURIComponent(id)}` },
+      })
+      return
+    }
+
+    setResolvingAlbum(albumTitle)
+    try {
+      const { data: albumData } = await apolloClient.query<
+        GetAlbumQuery,
+        GetAlbumQueryVariables
+      >({
+        query: GetAlbumDocument,
+        variables: { name: albumTitle },
+        fetchPolicy: 'network-only',
+      })
+      if (!albumData) {
+        setAlbumNavigationError(`Could not load album details for "${albumTitle}".`)
+        return
+      }
+      const matchingAlbums = albumData.getAlbum.filter(
+        (candidate) => normalizeName(candidate.name) === normalizeName(albumTitle),
+      )
+      const album =
+        matchingAlbums.find(
+          (candidate) => normalizeName(candidate.band_name) === normalizeName(band.name),
+        ) ?? (matchingAlbums.length === 1 ? matchingAlbums[0] : undefined)
+
+      if (!album) {
+        setAlbumNavigationError(`Could not find album details for "${albumTitle}".`)
+        return
+      }
+
+      navigate(`/albums/${encodeURIComponent(album.es_id)}`, {
+        state: { returnTo: `/bands/${encodeURIComponent(id)}` },
+      })
+    } catch (albumError) {
+      setAlbumNavigationError(
+        albumError instanceof Error ? albumError.message : 'Could not load album details.',
+      )
+    } finally {
+      setResolvingAlbum(null)
+    }
+  }
 
   return (
     <Box component="main" sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -173,36 +240,44 @@ function BandPage({ id, onBack }: BandPageProps) {
                 <DetailSection title={`Albums (${band.albums.length})`}>
                   <Stack spacing={1.5}>
                     {band.albums.map((album) => (
-                      <Paper key={album.id} variant="outlined" sx={{ p: 2 }}>
-                        <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-                          <Box
-                            aria-hidden="true"
-                            sx={{
-                              width: 48,
-                              height: 48,
-                              borderRadius: 1,
-                              bgcolor: 'action.selected',
-                              color: 'primary.main',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0,
-                            }}
-                          >
-                            <i className="fa-solid fa-music" />
-                          </Box>
-                          <Stack spacing={0.5}>
-                            <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 600 }}>
-                              {album.name}
-                            </Typography>
-                            <DetailValue label="Album ID" value={album.id} />
-                            <DetailValue label="Year" value={album.year ?? 'Not available'} />
-                            <DetailValue
-                              label="Length"
-                              value={album.length_minutes ?? 'Not available'}
-                            />
+                      <Paper key={album.id} variant="outlined">
+                        <ListItemButton
+                          component={RouterLink}
+                          to={`/albums/${encodeURIComponent(album.id)}`}
+                          state={{ returnTo: `/bands/${encodeURIComponent(id)}` }}
+                          aria-label={`View ${album.name} details`}
+                          sx={{ p: 2, borderRadius: 1 }}
+                        >
+                          <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+                            <Box
+                              aria-hidden="true"
+                              sx={{
+                                width: 48,
+                                height: 48,
+                                borderRadius: 1,
+                                bgcolor: 'action.selected',
+                                color: 'primary.main',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                              }}
+                            >
+                              <i className="fa-solid fa-music" />
+                            </Box>
+                            <Stack spacing={0.5}>
+                              <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                {album.name}
+                              </Typography>
+                              <DetailValue label="Album ID" value={album.id} />
+                              <DetailValue label="Year" value={album.year ?? 'Not available'} />
+                              <DetailValue
+                                label="Length"
+                                value={album.length_minutes ?? 'Not available'}
+                              />
+                            </Stack>
                           </Stack>
-                        </Stack>
+                        </ListItemButton>
                       </Paper>
                     ))}
                   </Stack>
@@ -285,7 +360,17 @@ function BandPage({ id, onBack }: BandPageProps) {
                     </Typography>
                     {band.database.albums.length ? (
                       band.database.albums.map((album) => (
-                        <Paper key={`${album.title}-${album.year}`} variant="outlined" sx={{ p: 2 }}>
+                        <Paper
+                          key={`${album.title}-${album.year}`}
+                          variant="outlined"
+                          sx={{ overflow: 'hidden' }}
+                        >
+                          <ListItemButton
+                            onClick={() => void openAlbum(album.title)}
+                            disabled={resolvingAlbum !== null}
+                            aria-label={`View ${album.title} details`}
+                            sx={{ p: 2 }}
+                          >
                           <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
                             <Box
                               aria-hidden="true"
@@ -309,10 +394,22 @@ function BandPage({ id, onBack }: BandPageProps) {
                               <DetailValue label="Length" value={album.lengthMinutes} />
                             </Stack>
                           </Stack>
+                          </ListItemButton>
                         </Paper>
                       ))
                     ) : (
                       <Typography color="text.secondary">No database albums listed.</Typography>
+                    )}
+                    {resolvingAlbum && (
+                      <Stack direction="row" spacing={1} role="status" sx={{ alignItems: 'center' }}>
+                        <CircularProgress size={18} />
+                        <Typography>Loading {resolvingAlbum}…</Typography>
+                      </Stack>
+                    )}
+                    {albumNavigationError && (
+                      <Alert severity="error" role="alert">
+                        {albumNavigationError}
+                      </Alert>
                     )}
                   </Stack>
                 </DetailSection>
