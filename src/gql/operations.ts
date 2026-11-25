@@ -1,11 +1,6 @@
 import { gql } from '@apollo/client'
 import type {
   AlbumMatch,
-  AllAboutArtist,
-  ArtistBand,
-  ArtistDatabaseDetails,
-  ArtistInstrument,
-  ArtistMatch,
   AllAboutBandSummary,
   AllAboutGenre,
   Band,
@@ -448,46 +443,27 @@ export const GetGenreDocument = gql`
   }
 `
 
-type ArtistSearchMatch = Pick<ArtistMatch, 'es_id' | 'name' | 'born_in'>
-type ArtistSearchDetails = Pick<AllAboutArtist, 'es_id' | 'name' | 'born_in'> & {
-  database?: Maybe<
-    Pick<ArtistDatabaseDetails, 'birthdate'> & {
-      band: Pick<ArtistBand, 'name'>
-      instruments: Array<Pick<ArtistInstrument, 'name'>>
-    }
-  >
-}
-
-export type GetArtistAndAboutQueryVariables = {
+export type GetArtistQueryVariables = {
   name: string
+  limit: number
 }
 
-export type GetArtistAndAboutQuery = {
-  getArtist: ArtistSearchMatch[]
-  getAllAboutArtist: ArtistSearchDetails[]
+export type GetArtistQuery = {
+  getArtist: Array<{
+    es_id: string
+    name: string
+    band_name: string
+    born_in?: Maybe<string>
+  }>
 }
 
-export const GetArtistAndAboutDocument = gql`
-  query GetArtistAndAbout($name: String!) {
-    getArtist(name: $name) {
+export const GetArtistDocument = gql`
+  query GetArtist($name: String!, $limit: Int!) {
+    getArtist(name: $name, limit: $limit) {
       es_id
       name
+      band_name
       born_in
-    }
-    getAllAboutArtist(name: $name) {
-      es_id
-      name
-      born_in
-      database {
-        birthdate
-        band {
-          name
-        }
-        instruments {
-          name
-          Type
-        }
-      }
     }
   }
 `
@@ -503,43 +479,14 @@ export type GetAllAboutArtistQuery = {
     name: string
     born_in?: Maybe<string>
     former_bands: string[]
-    elasticsearch: {
-      es_id: string
-      name: string
-      born_in?: Maybe<string>
-      former_bands: string[]
-    }
     database?: Maybe<{
-      Id: number
-      es_id: string
-      name: string
       birthdate: string
       band: {
-        Id: number
-        es_id: string
         name: string
-        officialWebsite: string
-        origin: string
-        rockAndRollHallOfFameInduction?: Maybe<number>
       }
       instruments: Array<{
         name: string
         Type: string
-      }>
-      albums: Array<{
-        albumId: number
-        album: {
-          Id: number
-          title: string
-          year: number
-          lengthMinutes: string
-          songs: Array<{
-            achievement: string
-            hit: boolean
-            title: string
-            year: number
-          }>
-        }
       }>
     }>
   }>
@@ -552,43 +499,14 @@ export const GetAllAboutArtistDocument = gql`
       name
       born_in
       former_bands
-      elasticsearch {
-        es_id
-        name
-        born_in
-        former_bands
-      }
       database {
-        Id
-        es_id
-        name
         birthdate
         band {
-          Id
-          es_id
           name
-          officialWebsite
-          origin
-          rockAndRollHallOfFameInduction
         }
         instruments {
           name
           Type
-        }
-        albums {
-          albumId
-          album {
-            Id
-            title
-            year
-            lengthMinutes
-            songs {
-              achievement
-              hit
-              title
-              year
-            }
-          }
         }
       }
     }

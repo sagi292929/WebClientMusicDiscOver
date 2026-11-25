@@ -15,13 +15,14 @@ import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { formatActiveYears } from '../music-entrance/utils'
+import { getMusicCategoryIcon } from '../music-entrance/categoryIcons'
 import {
   GetAlbumDocument,
   type GetAlbumQuery,
   type GetAlbumQueryVariables,
-  GetArtistAndAboutDocument,
-  type GetArtistAndAboutQuery,
-  type GetArtistAndAboutQueryVariables,
+  GetArtistDocument,
+  type GetArtistQuery,
+  type GetArtistQueryVariables,
   GetBandDocument,
   GetBandSongIdsDocument,
   type GetBandQuery,
@@ -35,14 +36,6 @@ import {
   type GetSongQuery,
   type GetSongQueryVariables,
 } from '../../gql/operations'
-
-const artistResultFieldOrder = ['Name', 'Born in', 'Band', 'Instruments'] as const
-
-function formatInstrumentName(name: string): string {
-  return name
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
-}
 
 export type SearchResultItem = {
   id: string
@@ -94,6 +87,7 @@ function SearchResults({
   const navigate = useNavigate()
   const [songNavigationLoading, setSongNavigationLoading] = useState(false)
   const [songNavigationError, setSongNavigationError] = useState<string | null>(null)
+  const isAllSearch = category === 'All'
   const isBandSearch = category === 'Band'
   const isArtistSearch = category === 'Artist'
   const isAlbumSearch = category === 'Album'
@@ -105,7 +99,7 @@ function SearchResults({
     error: songError,
   } = useQuery<GetSongQuery, GetSongQueryVariables>(GetSongDocument, {
     variables: { name: query },
-    skip: !isSongSearch,
+    skip: !isAllSearch && !isSongSearch,
   })
   const {
     data: albumData,
@@ -113,25 +107,24 @@ function SearchResults({
     error: albumError,
   } = useQuery<GetAlbumQuery, GetAlbumQueryVariables>(GetAlbumDocument, {
     variables: { name: query },
-    skip: !isAlbumSearch,
+    skip: !isAllSearch && !isAlbumSearch,
   })
   const { data: bandData, loading: bandLoading, error: bandError } = useQuery<
     GetBandQuery,
     GetBandQueryVariables
   >(GetBandDocument, {
     variables: { name: query },
-    skip: !isBandSearch,
+    skip: !isAllSearch && !isBandSearch,
   })
   const {
     data: artistData,
     loading: artistLoading,
     error: artistError,
-  } = useQuery<GetArtistAndAboutQuery, GetArtistAndAboutQueryVariables>(
-    GetArtistAndAboutDocument,
+  } = useQuery<GetArtistQuery, GetArtistQueryVariables>(
+    GetArtistDocument,
     {
-      variables: { name: query },
-      skip: !isArtistSearch,
-      errorPolicy: 'all',
+      variables: { name: query, limit: 100 },
+      skip: !isAllSearch && !isArtistSearch,
     },
   )
   const {
@@ -140,7 +133,7 @@ function SearchResults({
     error: genreError,
   } = useQuery<GetGenreQuery, GetGenreQueryVariables>(GetGenreDocument, {
     variables: { name: query },
-    skip: !isGenreSearch,
+    skip: !isAllSearch && !isGenreSearch,
   })
 
   async function openSongDetails(songName: string, bandName: string) {
@@ -187,81 +180,91 @@ function SearchResults({
     }
   }
 
-  const artistDetailsById = new Map(
-    (artistData?.getAllAboutArtist ?? []).map((artist) => [artist.es_id, artist]),
+  const bandResults: SearchResultItem[] = (bandData?.getBand ?? []).map((band) => ({
+    id: band.id,
+    title: band.name,
+    category: 'Band',
+    fields: [
+      { label: 'ID', value: band.id },
+      {
+        label: 'Active years',
+        value: band.active_years.length > 0
+          ? formatActiveYears(band.active_years)
+          : 'Not available',
+      },
+    ],
+  }))
+  const albumResults: SearchResultItem[] = (albumData?.getAlbum ?? []).map((album) => ({
+    id: album.es_id,
+    title: album.name,
+    subtitle: album.band_name,
+    category: 'Album',
+  }))
+  const songResults: SearchResultItem[] = (songData?.getSong ?? []).map((song) => ({
+    id: song.es_id,
+    title: song.name,
+    subtitle: song.band_name,
+    category: 'Song',
+  }))
+  const artistResults: SearchResultItem[] = (artistData?.getArtist ?? []).map((artist) => ({
+    id: artist.es_id,
+    title: artist.name,
+    subtitle: artist.band_name,
+    category: 'Artist',
+    fields: [{ label: 'Born in', value: artist.born_in ?? 'Not available' }],
+  }))
+  const genreResults: SearchResultItem[] = (genreData?.getGenre ?? []).flatMap(
+    ({ main_genre: mainGenre, genres }) =>
+      genres.map((genre) => ({
+        id: String(genre.Id),
+        title: genre.name,
+        subtitle: mainGenre ?? undefined,
+        category: 'Genre',
+      })),
   )
-  const artistMatches = new Map(
-    (artistData?.getArtist ?? []).map((artist) => [artist.es_id, artist]),
-  )
-  for (const artist of artistDetailsById.values()) {
-    if (!artistMatches.has(artist.es_id)) {
-      artistMatches.set(artist.es_id, artist)
-    }
-  }
 
+  const resultGroups = [
+    {
+      category: 'Band',
+      results: sortSearchResults(bandResults, query),
+      loading: bandLoading,
+      error: bandError,
+    },
+    {
+      category: 'Artist',
+      results: sortSearchResults(artistResults, query),
+      loading: artistLoading,
+      error: artistError,
+    },
+    {
+      category: 'Album',
+      results: sortSearchResults(albumResults, query),
+      loading: albumLoading,
+      error: albumError,
+    },
+    {
+      category: 'Song',
+      results: sortSearchResults(songResults, query),
+      loading: songLoading,
+      error: songError,
+    },
+    {
+      category: 'Genre',
+      results: sortSearchResults(genreResults, query),
+      loading: genreLoading,
+      error: genreError,
+    },
+  ]
   const displayedResults: SearchResultItem[] = isBandSearch
-    ? (bandData?.getBand ?? []).map((band) => ({
-        id: band.id,
-        title: band.name,
-        category: 'Band',
-        fields: [
-          { label: 'ID', value: band.id },
-          {
-            label: 'Active years',
-            value: band.active_years.length > 0
-              ? formatActiveYears(band.active_years)
-              : 'Not available',
-          },
-        ],
-      }))
+    ? bandResults
     : isAlbumSearch
-      ? (albumData?.getAlbum ?? []).map((album) => ({
-          id: album.es_id,
-          title: album.name,
-          subtitle: album.band_name,
-          category: 'Album',
-        }))
+      ? albumResults
       : isSongSearch
-        ? (songData?.getSong ?? []).map((song) => ({
-            id: song.es_id,
-            title: song.name,
-            subtitle: song.band_name,
-            category: 'Song',
-          }))
+        ? songResults
         : isArtistSearch
-          ? [...artistMatches.values()].map((artist) => {
-              const details = artistDetailsById.get(artist.es_id)
-              const database = details?.database
-              const artistValues = {
-                Name: artist.name,
-                'Born in': artist.born_in ?? database?.birthdate ?? 'Not available',
-                Band: database?.band.name ?? 'Not available',
-                Instruments: database?.instruments
-                  .map(({ name }) => formatInstrumentName(name))
-                  .join(', ')
-                  || 'Not available',
-              }
-              const [titleField, ...fields] = artistResultFieldOrder.map((label) => ({
-                label,
-                value: artistValues[label],
-              }))
-
-              return {
-                id: artist.es_id,
-                title: titleField.value,
-                category: 'Artist',
-                fields,
-              }
-            })
+          ? artistResults
           : isGenreSearch
-            ? (genreData?.getGenre ?? []).flatMap(({ main_genre: mainGenre, genres }) =>
-                genres.map((genre) => ({
-                  id: String(genre.Id),
-                  title: genre.name,
-                  subtitle: mainGenre ?? undefined,
-                  category: 'Genre',
-                })),
-              )
+            ? genreResults
             : results
 
   const sortedResults = sortSearchResults(displayedResults, query)
@@ -295,6 +298,145 @@ function SearchResults({
         : isGenreSearch
           ? 'genre'
           : 'artist'
+  const totalAllResults = resultGroups.reduce((total, group) => total + group.results.length, 0)
+
+  function renderResultsList(resultsToRender: SearchResultItem[]) {
+    return (
+      <List
+        component="ul"
+        disablePadding
+        sx={{
+          overflow: 'hidden',
+          border: 1,
+          borderColor: 'divider',
+          borderRadius: 2,
+          bgcolor: 'background.paper',
+        }}
+      >
+        {resultsToRender.map((result, index) => {
+          const resultCategory = result.category ?? category
+          const rowContents = (
+            <>
+              <Typography
+                component="span"
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontVariantNumeric: 'tabular-nums', minWidth: { xs: 'auto', sm: 3 } }}
+              >
+                {String(index + 1).padStart(2, '0')}
+              </Typography>
+              <Box
+                aria-hidden="true"
+                sx={{
+                  width: { xs: 40, sm: 48 },
+                  height: { xs: 40, sm: 48 },
+                  borderRadius: 1,
+                  bgcolor: 'action.selected',
+                  color: 'primary.main',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                {getMusicCategoryIcon(resultCategory)}
+              </Box>
+              <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+                <Typography component="strong" variant="subtitle1" noWrap>
+                  {result.title}
+                </Typography>
+                {result.subtitle && (
+                  <Typography component="span" variant="body2" color="text.secondary" noWrap>
+                    {result.subtitle}
+                  </Typography>
+                )}
+                {result.fields?.map((field) => (
+                  <Typography
+                    key={field.label}
+                    component="span"
+                    variant="caption"
+                    color="text.secondary"
+                  >
+                    <Box component="strong" sx={{ color: 'text.primary' }}>
+                      {field.label}:
+                    </Box>{' '}
+                    {field.value}
+                  </Typography>
+                ))}
+              </Stack>
+              {result.details && (
+                <Typography
+                  component="span"
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ display: { xs: 'none', sm: 'block' } }}
+                >
+                  {result.details}
+                </Typography>
+              )}
+              <Chip
+                label={resultCategory}
+                size="small"
+                sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+              />
+              <Box component="span" aria-hidden="true" sx={{ color: 'text.disabled' }}>
+                <i className="fa-solid fa-chevron-right" />
+              </Box>
+            </>
+          )
+          const rowSx = {
+            gap: { xs: 1.5, sm: 2 },
+            minHeight: 82,
+            py: 1.5,
+            px: { xs: 1.5, sm: 2.5 },
+            alignItems: 'center',
+            borderBottom: index < resultsToRender.length - 1 ? 1 : 0,
+            borderColor: 'divider',
+          }
+
+          if (resultCategory === 'Band' || resultCategory === 'Album' ||
+            resultCategory === 'Genre' || resultCategory === 'Artist' ||
+            resultCategory === 'Song') {
+            return (
+              <ListItemButton
+                component="li"
+                key={`${resultCategory}-${result.id}`}
+                onClick={() => {
+                  if (resultCategory === 'Band') {
+                    navigate(`/bands/${encodeURIComponent(result.id)}`)
+                  } else if (resultCategory === 'Album') {
+                    navigate(`/albums/${encodeURIComponent(result.id)}`)
+                  } else if (resultCategory === 'Genre') {
+                    navigate(`/genres/${encodeURIComponent(result.id)}`)
+                  } else if (resultCategory === 'Artist') {
+                    navigate(`/artists/${encodeURIComponent(result.id)}`, {
+                      state: {
+                        searchQuery: query,
+                        artistName: result.title,
+                      },
+                    })
+                  } else {
+                    void openSongDetails(result.title, result.subtitle ?? 'Unknown band')
+                  }
+                }}
+                aria-label={`View ${result.title} details`}
+                disabled={resultCategory === 'Song' && songNavigationLoading}
+                sx={rowSx}
+              >
+                {rowContents}
+              </ListItemButton>
+            )
+          }
+
+          return (
+            <ListItem component="li" key={`${resultCategory}-${result.id}`} sx={rowSx}>
+              {rowContents}
+            </ListItem>
+          )
+        })}
+      </List>
+    )
+  }
 
   return (
     <Box
@@ -388,9 +530,10 @@ function SearchResults({
           <Typography component="h2" variant="h6" sx={{ fontWeight: 600 }}>
             Results
           </Typography>
-          {sortedResults.length > 0 && (
+          {(isAllSearch ? totalAllResults : sortedResults.length) > 0 && (
             <Typography component="span" variant="body2" color="text.secondary">
-              {sortedResults.length} {sortedResults.length === 1 ? 'result' : 'results'}
+              {isAllSearch ? totalAllResults : sortedResults.length}{' '}
+              {(isAllSearch ? totalAllResults : sortedResults.length) === 1 ? 'result' : 'results'}
             </Typography>
           )}
         </Stack>
@@ -428,6 +571,82 @@ function SearchResults({
             <AlertTitle>Could not open song details</AlertTitle>
             {songNavigationError}
           </Alert>
+        ) : isAllSearch ? (
+          resultGroups.some((group) => group.loading || group.error || group.results.length > 0) ? (
+            <Stack spacing={2}>
+              {resultGroups
+                .filter((group) => group.loading || group.error || group.results.length > 0)
+                .map((group) => {
+                  const pluralCategory =
+                    group.category === 'Genre'
+                      ? 'genres'
+                      : `${group.category.toLowerCase()}s`
+                  return (
+                    <Paper
+                      key={group.category}
+                      component="section"
+                      aria-label={`${group.category} results`}
+                      variant="outlined"
+                      sx={{ p: { xs: 1.5, sm: 2 } }}
+                    >
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}
+                      >
+                        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                          <Box
+                            aria-hidden="true"
+                            sx={{ display: 'inline-flex', color: 'primary.main' }}
+                          >
+                            {getMusicCategoryIcon(group.category)}
+                          </Box>
+                          <Typography component="h3" variant="h6">
+                            {group.category}
+                          </Typography>
+                        </Stack>
+                        {group.results.length > 0 && (
+                          <Typography component="span" variant="body2" color="text.secondary">
+                            {group.results.length}{' '}
+                            {group.results.length === 1 ? 'result' : 'results'}
+                          </Typography>
+                        )}
+                      </Stack>
+                      {group.loading ? (
+                        <Stack
+                          direction="row"
+                          spacing={1.5}
+                          role="status"
+                          sx={{ alignItems: 'center', justifyContent: 'center', py: 3 }}
+                        >
+                          <CircularProgress size={20} />
+                          <Typography component="span" variant="body2">
+                            Searching {pluralCategory}…
+                          </Typography>
+                        </Stack>
+                      ) : group.error ? (
+                        <Alert severity="error" role="alert">
+                          Could not load {group.category.toLowerCase()} results: {group.error.message}
+                        </Alert>
+                      ) : (
+                        renderResultsList(group.results)
+                      )}
+                    </Paper>
+                  )
+                })}
+            </Stack>
+          ) : (
+            <Paper variant="outlined" sx={{ p: 4 }}>
+              <Typography
+                component="p"
+                variant="body2"
+                color="text.secondary"
+                sx={{ m: 0, textAlign: 'center' }}
+              >
+                No results matched this search.
+              </Typography>
+            </Paper>
+          )
         ) : showFatalError ? (
           <Alert severity="error" role="alert">
             <AlertTitle>
@@ -443,135 +662,7 @@ function SearchResults({
                 {artistError.message}
               </Alert>
             )}
-            <List
-              component="ul"
-              disablePadding
-              sx={{
-                overflow: 'hidden',
-                border: 1,
-                borderColor: 'divider',
-                borderRadius: 2,
-                bgcolor: 'background.paper',
-              }}
-            >
-              {sortedResults.map((result, index) => {
-                const rowContents = (
-                  <>
-                    <Typography
-                      component="span"
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ fontVariantNumeric: 'tabular-nums', minWidth: { xs: 'auto', sm: 3 } }}
-                    >
-                      {String(index + 1).padStart(2, '0')}
-                    </Typography>
-                    <Box
-                      aria-hidden="true"
-                      sx={{
-                        width: { xs: 40, sm: 48 },
-                        height: { xs: 40, sm: 48 },
-                        borderRadius: 1,
-                        bgcolor: 'action.selected',
-                        color: 'primary.main',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <i className="fa-solid fa-music" />
-                    </Box>
-                    <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography component="strong" variant="subtitle1" noWrap>
-                        {result.title}
-                      </Typography>
-                      {result.subtitle && (
-                        <Typography component="span" variant="body2" color="text.secondary" noWrap>
-                          {result.subtitle}
-                        </Typography>
-                      )}
-                      {result.fields?.map((field) => (
-                        <Typography
-                          key={field.label}
-                          component="span"
-                          variant="caption"
-                          color="text.secondary"
-                        >
-                          <Box component="strong" sx={{ color: 'text.primary' }}>
-                            {field.label}:
-                          </Box>{' '}
-                          {field.value}
-                        </Typography>
-                      ))}
-                    </Stack>
-                    {result.details && (
-                      <Typography
-                        component="span"
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ display: { xs: 'none', sm: 'block' } }}
-                      >
-                        {result.details}
-                      </Typography>
-                    )}
-                    <Chip
-                      label={result.category ?? category}
-                      size="small"
-                      sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
-                    />
-                    <Box component="span" aria-hidden="true" sx={{ color: 'text.disabled' }}>
-                      <i className="fa-solid fa-chevron-right" />
-                    </Box>
-                  </>
-                )
-                const rowSx = {
-                    gap: { xs: 1.5, sm: 2 },
-                    minHeight: 82,
-                    py: 1.5,
-                    px: { xs: 1.5, sm: 2.5 },
-                    alignItems: 'center',
-                    borderBottom: index < sortedResults.length - 1 ? 1 : 0,
-                    borderColor: 'divider',
-                  }
-
-                return isBandSearch || isGenreSearch || isSongSearch || isArtistSearch || isAlbumSearch ? (
-                  <ListItemButton
-                    component="li"
-                    key={result.id}
-                    onClick={() => {
-                      if (isBandSearch) {
-                        navigate(`/bands/${encodeURIComponent(result.id)}`)
-                      } else if (isAlbumSearch) {
-                        navigate(`/albums/${encodeURIComponent(result.id)}`)
-                      } else if (isGenreSearch) {
-                        navigate(`/genres/${encodeURIComponent(result.id)}`)
-                      } else if (isArtistSearch) {
-                        navigate(`/artists/${encodeURIComponent(result.id)}`, {
-                          state: {
-                            searchQuery: query,
-                            artistName: result.title,
-                          },
-                        })
-                      } else {
-                        void openSongDetails(
-                          result.title,
-                          result.subtitle ?? 'Unknown band',
-                        )
-                      }
-                    }}
-                    aria-label={`View ${result.title} details`}
-                    disabled={isSongSearch && songNavigationLoading}
-                    sx={rowSx}
-                  >
-                    {rowContents}
-                  </ListItemButton>
-                ) : (
-                  <ListItem component="li" key={result.id} sx={rowSx}>
-                    {rowContents}
-                  </ListItem>
-                )
-              })}
-            </List>
+            {renderResultsList(sortedResults)}
           </Stack>
         ) : (
           <Paper variant="outlined" sx={{ p: 4 }}>

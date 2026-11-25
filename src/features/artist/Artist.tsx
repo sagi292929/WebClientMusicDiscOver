@@ -29,23 +29,17 @@ function formatFieldLabel(field: string): string {
 }
 
 function cleanArtistDetails(item: GetAllAboutArtistQuery['getAllAboutArtist'][number]) {
-  const elasticsearch = item.elasticsearch
   const details: Record<string, unknown> = {}
 
   details.Band = item.database?.band.name ?? 'Not available'
-  details['Born in'] = item.born_in ?? elasticsearch.born_in ?? 'Not available'
+  details['Born in'] = item.born_in ?? 'Not available'
   details.Birthday = item.database?.birthdate ?? 'Not available'
-  details['Band official website'] =
-    item.database?.band.officialWebsite ?? 'Not available'
-  details['Band origin'] = item.database?.band.origin ?? 'Not available'
-  details['Rock and Roll Hall of Fame induction'] =
-    item.database?.band.rockAndRollHallOfFameInduction ?? 'Not available'
   details.Instruments =
     item.database?.instruments.map((instrument) => instrument.name).join(', ')
     ?? 'Not available'
   details['Former bands'] =
-    elasticsearch.former_bands.length > 0
-      ? elasticsearch.former_bands.join(', ')
+    item.former_bands.length > 0
+      ? item.former_bands.join(', ')
       : 'Not available'
 
   return details
